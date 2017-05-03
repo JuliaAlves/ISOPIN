@@ -7,13 +7,13 @@ using System.IO;
 using ServerSide.Properties;
 using System;
 using System.Reflection;
+using System.Net.Sockets;
 
 namespace ServerSide
 {
     class Program
     {
-        private static HttpListener listener;
-
+        private static TcpListener listener;
 
         /// <summary>
         /// Inicialização do console
@@ -21,9 +21,8 @@ namespace ServerSide
         /// <param name="args">Argumentos da linha de comando</param>
         static void Main(string[] args)
         {
-            // Inicializa o servidor Http na porta configurada
-            listener = new HttpListener();
-            listener.Prefixes.Add(string.Format("http://*:{0}/", Settings.Default.Port));
+            // Inicializa o servidor Tcp na porta configurada
+            listener = new TcpListener(IPAddress.Any, Settings.Default.Port);
             listener.Start();
 
             // Roda uma thread que responde as requisições feitas ao servidor
@@ -39,10 +38,10 @@ namespace ServerSide
         {
             return Task.Run(() =>
             {
-                while (listener.IsListening)
+                while (true)
                 {
-                    HttpListenerContext ctx = listener.GetContext();
-                    Task.Run(() => ProcessRequest(ctx));
+                    TcpClient cl = listener.AcceptTcpClient();
+                    Task.Run(() => ProcessRequest(cl));
                 }
             });
         }
@@ -50,21 +49,19 @@ namespace ServerSide
         /// <summary>
         /// Processa uma requisição
         /// </summary>
-        /// <param name="ctx">HttpListenerContext recebido pelo listener</param>
-        private static void ProcessRequest(HttpListenerContext ctx)
+        /// <param name="cl">TcpClient recebido pelo listener</param>
+        private static void ProcessRequest(TcpClient cl)
         {
-            HttpListenerRequest request = ctx.Request;
-            string prot;
-            using (StreamReader reader = new StreamReader(request.InputStream))
-                prot = reader.ReadToEnd();
+            StreamReader reader = new StreamReader(cl.GetStream());
+            string prot = reader.ReadToEnd();
 
             Console.WriteLine(prot);
 
             // Define a string de conexão
             MySqlConnection connection;
             Assembly assembly = Assembly.GetCallingAssembly();
-            using (StreamReader reader = new StreamReader(assembly.GetManifestResourceStream("ServerSide.db.dat")))
-                connection = new MySqlConnection(reader.ReadToEnd());
+            using (StreamReader r = new StreamReader(assembly.GetManifestResourceStream("ServerSide.db.dat")))
+                connection = new MySqlConnection(r.ReadToEnd());
 
             // Abre a conexão
             try
@@ -75,9 +72,8 @@ namespace ServerSide
             {
                 Console.WriteLine("Falha na conexão com o banco de dados: " + e.Message);
 
-                using (StreamWriter writer = new StreamWriter(ctx.Response.OutputStream))
+                using (StreamWriter writer = new StreamWriter(cl.GetStream()))
                     writer.Write("failed: DB offline");
-                ctx.Response.OutputStream.Close();
                 return;
             }
 
@@ -138,9 +134,8 @@ namespace ServerSide
                     interactions = result.GetString("interactions");
                 }
 
-                using (StreamWriter writer = new StreamWriter(ctx.Response.OutputStream))
+                using (StreamWriter writer = new StreamWriter(cl.GetStream()))
                     writer.Write(interactions);
-                ctx.Response.OutputStream.Close();
                 command.Dispose();
             }
             else
@@ -150,6 +145,5 @@ namespace ServerSide
 
             connection.Close();
         }
-
     }
 }
