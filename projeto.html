@@ -1,0 +1,58 @@
+<html>
+<head>
+    <link rel="stylesheet" href="estilo.css">    
+	<meta charset="utf-8">	
+	<title>Busca de proteínas</title>
+    
+    <script type="text/javascript">
+		function Procurar() {
+            var result = [];            
+            result.push("batata");
+            result.push("pao");
+            result.push("click");
+            result.push("noice");
+            
+            for (var i = 0; i < result.length; i++) {
+                var label = "";
+                if((i+2)%2==0)
+                    label="par";
+                else
+                    label="impar";
+						document.getElementById("resultado").innerHTML += 
+                            "<label id="+label+">"+result[i]+"</label><br>";
+					}
+            
+			var ajax = new XMLHttpRequest();
+            ajax.open("GET", "143.106.4.195:1250?="+encodeURIComponent(document.getElementById("proteina")));
+            ajax.send();
+                        
+			ajax.onreadystatechange = function()
+			{
+				if(this.readyState == 4)
+				{                                        
+					var str = this.responseText;
+					var result = str.split(",");
+					for (var i = 0; i < result.length; i++) {
+						document.getElementById("resultado").innerHTML += 
+                            result[i]+"<br>";
+					}
+				}
+			}            
+            
+		}
+		</script>
+    
+</head>
+<body>
+	<!--<form action="143.106.4.195:1190" method="GET">-->
+    
+		<div id="Busca">
+        <br>
+		Proteína a ser procurada:
+		<input type="text" name="locusProcurado" id="proteina">
+        <button onclick="Procurar()"></button>
+		</div>
+		<div id="resultado">
+        </div>
+</body>
+</html>
