@@ -13,7 +13,8 @@ namespace ServerSide
 {
     class Program
     {
-        private static TcpListener listener;
+        private static HttpListener listener;
+
 
         /// <summary>
         /// Inicialização do console
@@ -21,8 +22,9 @@ namespace ServerSide
         /// <param name="args">Argumentos da linha de comando</param>
         static void Main(string[] args)
         {
-            // Inicializa o servidor Tcp na porta configurada
-            listener = new TcpListener(IPAddress.Any, Settings.Default.Port);
+            // Inicializa o servidor Http na porta configurada
+            listener = new HttpListener();
+            listener.Prefixes.Add(string.Format("http://*:{0}/", Settings.Default.Port));
             listener.Start();
 
             // Roda uma thread que responde as requisições feitas ao servidor
@@ -30,7 +32,7 @@ namespace ServerSide
             task.Wait();
         }
 
- 
+
         /// <summary>
         /// Responde requisições ao sistema de forma asíncrona
         /// </summary>
@@ -38,10 +40,10 @@ namespace ServerSide
         {
             return Task.Run(() =>
             {
-                while (true)
+                while (listener.IsListening)
                 {
-                    TcpClient cl = listener.AcceptTcpClient();
-                    Task.Run(() => ProcessRequest(cl));
+                    HttpListenerContext ctx = listener.GetContext();
+                    Task.Run(() => ProcessRequest(ctx));
                 }
             });
         }
@@ -49,11 +51,13 @@ namespace ServerSide
         /// <summary>
         /// Processa uma requisição
         /// </summary>
-        /// <param name="cl">TcpClient recebido pelo listener</param>
-        private static void ProcessRequest(TcpClient cl)
+        /// <param name="ctx">HttpListenerContext recebido pelo listener</param>
+        private static void ProcessRequest(HttpListenerContext ctx)
         {
-            StreamReader reader = new StreamReader(cl.GetStream());
-            string prot = reader.ReadToEnd();
+            HttpListenerRequest request = ctx.Request;
+            string prot;
+            using (StreamReader reader = new StreamReader(request.InputStream))
+                prot = reader.ReadToEnd();
 
             Console.WriteLine(prot);
 
@@ -72,7 +76,7 @@ namespace ServerSide
             {
                 Console.WriteLine("Falha na conexão com o banco de dados: " + e.Message);
 
-                using (StreamWriter writer = new StreamWriter(cl.GetStream()))
+                using (StreamWriter writer = new StreamWriter(ctx.Response.OutputStream))
                     writer.Write("failed: DB offline");
                 return;
             }
@@ -81,7 +85,6 @@ namespace ServerSide
             if (connection.State == ConnectionState.Open)
             {
                 // Verifica se existe cache para esta busca
-                // TODO: Fazer cache local
                 MySqlCommand command = new MySqlCommand("SELECT interactions FROM cache WHERE locus= @prot", connection);
                 command.Parameters.AddWithValue("@prot", prot);
 
@@ -131,10 +134,10 @@ namespace ServerSide
                 else
                 {
                     result.NextResult();
-                    interactions = result.GetString("interactions");
+                    interactions = result.GetString("interations");
                 }
 
-                using (StreamWriter writer = new StreamWriter(cl.GetStream()))
+                using (StreamWriter writer = new StreamWriter(ctx.Response.OutputStream))
                     writer.Write(interactions);
                 command.Dispose();
             }

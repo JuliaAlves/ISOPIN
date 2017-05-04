@@ -242,4 +242,5 @@ ModelManifest.xml
 .fake/
 
 # Arquivo de string de conexão do banco de dados
-ServerSide/db.dat
+/ServerSide/db.dat
+/ServerSide/db2.dat
