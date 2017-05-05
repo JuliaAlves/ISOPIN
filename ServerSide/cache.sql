@@ -32,7 +32,7 @@ BEGIN
 			SET caractereAtual := SUBSTRING(interacoes, i, 1);
 			IF caractereAtual = ',' THEN			
 				SET locusAtual := SUBSTRING(interacoes, i, tamanho);
-				DELETE FROM cache WHERE locus = locusAtual;
+				DELETE FROM interaction_cache WHERE locus = locusAtual;
 				SET tamanho := 0;
 			END IF;
 			
