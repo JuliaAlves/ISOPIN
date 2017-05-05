@@ -22,7 +22,7 @@ button{
     height: auto;
 }
 
-#par{    
+.par {
     position: absolute;
     top: auto;
     left: 0px;
@@ -30,7 +30,8 @@ button{
     height: auto;
     background-color: lightgray;
 }
-#impar{    
+
+.impar {
     position: absolute;
     top: auto;
     left: 0px;

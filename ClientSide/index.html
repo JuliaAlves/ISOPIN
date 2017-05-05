@@ -6,39 +6,34 @@
     
     <script type="text/javascript">
 		function Procurar() {
-            var result = [];            
-            result.push("batata");
-            result.push("pao");
-            result.push("click");
-            result.push("noice");
-            
-            for (var i = 0; i < result.length; i++) {
-                var label = "";
-                if((i+2)%2==0)
-                    label="par";
-                else
-                    label="impar";
-						document.getElementById("resultado").innerHTML += 
-                            "<label id="+label+">"+result[i]+"</label><br>";
-					}
+			var out = document.getElementById("resultado");
+			out.innerText = "Procurando proteína...";
+		
+            var result = [];
             
 			var ajax = new XMLHttpRequest();
+			ajax.onerror = function()
+			{
+				document.getElementById("resultado").innerText = "Falha ao conectar ao servidor";
+			};
+			
             ajax.open("POST", "http://143.106.4.195:1250");
-            ajax.send(encodeURIComponent(document.getElementById("proteina")));
-                        
+            ajax.send(encodeURIComponent(document.getElementById("proteina").value));
+			
 			ajax.onreadystatechange = function()
 			{
 				if (ajax.readyState == 4)
-				{                                        
-					var str = this.responseText;
+				{
+					out.innerText = "";                
+					var str = ajax.responseText;
 					var result = str.split(",");
 					for (var i = 0; i < result.length; i++) {
-						document.getElementById("resultado").innerHTML += 
-                            result[i]+"<br>";
+						out.innerHTML += 
+							"<span class=" + ((i%2==0) ? "par" : "impar") + ">" + 
+                            result[i]+"</span><br>";
 					}
 				}
-			}            
-            
+			};
 		}
 		</script>
     
