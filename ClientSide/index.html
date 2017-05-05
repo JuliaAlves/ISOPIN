@@ -23,12 +23,12 @@
 					}
             
 			var ajax = new XMLHttpRequest();
-            ajax.open("GET", "143.106.4.195:1250?="+encodeURIComponent(document.getElementById("proteina")));
-            ajax.send();
+            ajax.open("POST", "143.106.4.195:1250");
+            ajax.send(encodeURIComponent(document.getElementById("proteina"));
                         
 			ajax.onreadystatechange = function()
 			{
-				if(this.readyState == 4)
+				if (ajax.readyState == 4)
 				{                                        
 					var str = this.responseText;
 					var result = str.split(",");
