@@ -25,7 +25,19 @@ namespace ServerSide
             // Inicializa o servidor Http na porta configurada
             listener = new HttpListener();
             listener.Prefixes.Add(string.Format("http://*:{0}/", Settings.Default.Port));
-            listener.Start();
+
+            try
+            {
+                listener.Start();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Falha ao inicializar o servidor: " + e.Message);
+                return;
+            }
+
+            Console.WriteLine("Servidor HTTP inicializado com sucesso na porta " + Settings.Default.Port);
+            Console.WriteLine();
 
             // Roda uma thread que responde as requisições feitas ao servidor
             Task task = RespondRequestsAsync();
@@ -59,7 +71,16 @@ namespace ServerSide
             using (StreamReader reader = new StreamReader(request.InputStream))
                 prot = reader.ReadToEnd();
 
-            Console.WriteLine(prot);
+            // O nome do locus não deve ser vazio ou estar em branco
+            if (string.IsNullOrWhiteSpace(prot))
+            {
+                using (StreamWriter writer = new StreamWriter(ctx.Response.OutputStream))
+                    writer.Write("empty locus name");
+                ctx.Response.Close();
+                return;
+            }
+
+            Console.WriteLine("" + ctx.Request.RemoteEndPoint + " requisitou as interações para `" + prot + "'");
 
             // Define a string de conexão
             MySqlConnection connection;
@@ -78,6 +99,7 @@ namespace ServerSide
 
                 using (StreamWriter writer = new StreamWriter(ctx.Response.OutputStream))
                     writer.Write("failed: DB offline");
+                ctx.Response.Close();
                 return;
             }
 
@@ -85,7 +107,7 @@ namespace ServerSide
             if (connection.State == ConnectionState.Open)
             {
                 // Verifica se existe cache para esta busca
-                MySqlCommand command = new MySqlCommand("SELECT interactions FROM cache WHERE locus= @prot", connection);
+                MySqlCommand command = new MySqlCommand("SELECT interactions FROM interaction_cache WHERE locus=@prot", connection);
                 command.Parameters.AddWithValue("@prot", prot);
 
                 MySqlDataReader result = command.ExecuteReader();
@@ -93,16 +115,34 @@ namespace ServerSide
                 List<string> results;
                 string interactions;
 
+                // Se não houver cache, executa a consulta completa e armazena o cache
                 if (!result.HasRows)
                 {
+                    result.Close();
                     command.Dispose();
+
+                    // Seleciona todas as interações onde o locus procurado esteja como locusA ou locusB
                     command = new MySqlCommand("SELECT locusA, locusB FROM interactome WHERE locusA=@prot or locusB=@prot", connection);
                     command.Parameters.AddWithValue("@prot", prot);
                     result = command.ExecuteReader();
 
-                    results = new List<string>();
+                    // Se não achou nenhuma entrada com aquela proteína, ela não existe
+                    if (!result.HasRows)
+                    {
+                        result.Close();
 
-                    while (result.NextResult())
+                        Console.WriteLine("O locus requisitado por " + ctx.Request.RemoteEndPoint + " não foi encontrado no banco de dados");
+
+                        using (StreamWriter writer = new StreamWriter(ctx.Response.OutputStream))
+                            writer.Write("404: locus not found");
+                        ctx.Response.Close();
+                        connection.Close();
+
+                        return;
+                    }
+
+                    results = new List<string>();
+                    while (result.Read())
                     {
                         string locusA = result.GetString("locusA");
                         string locusB = result.GetString("locusB");
@@ -113,9 +153,8 @@ namespace ServerSide
                             results.Add(locusA);
                     }
 
-                    // Salva o cache para a busca feita
+                    // Gera a string para as interações
                     interactions = "";
-
                     for (int i = 0; i < results.Count; i++)
                     {
                         if (i == 0)
@@ -124,28 +163,41 @@ namespace ServerSide
                             interactions += "," + results[i];
                     }
 
+                    result.Close();
                     command.Dispose();
-                    command = new MySqlCommand("INSERT INTO cache VALUES(@prot, @interactions)", connection);
+
+                    // Salva o cache para a busca feita
+                    command = new MySqlCommand("INSERT INTO interaction_cache VALUES(@prot, @interactions)", connection);
                     command.Parameters.AddWithValue("@prot", prot);
                     command.Parameters.AddWithValue("@interactions", interactions);
                     command.ExecuteNonQuery();
                     command.Dispose();
                 }
+
+                // Se não, lê do cache
                 else
                 {
-                    result.NextResult();
-                    interactions = result.GetString("interations");
+                    result.Read();
+                    interactions = result.GetString("interactions");
                 }
+
+                result.Close();
+                command.Dispose();
+
+                if (string.IsNullOrWhiteSpace(interactions))
+                    interactions = "(none)";
+
+                Console.WriteLine("Resposta enviada para " + ctx.Request.RemoteEndPoint);
 
                 using (StreamWriter writer = new StreamWriter(ctx.Response.OutputStream))
                     writer.Write(interactions);
-                command.Dispose();
             }
             else
             {
                 Console.WriteLine("Falha na conexão com o banco de dados");
             }
 
+            ctx.Response.Close();
             connection.Close();
         }
     }
