@@ -66,10 +66,28 @@ namespace ServerSide
         /// <param name="ctx">HttpListenerContext recebido pelo listener</param>
         private static void ProcessRequest(HttpListenerContext ctx)
         {
+            ctx.Response.AppendHeader("Access-Control-Allow-Origin", "*");
+
             HttpListenerRequest request = ctx.Request;
             string prot;
-            using (StreamReader reader = new StreamReader(request.InputStream))
-                prot = reader.ReadToEnd();
+
+            // Só responde requisições feitas por POST ou GET
+            if (ctx.Request.HttpMethod.Equals("POST"))
+            {
+                using (StreamReader reader = new StreamReader(ctx.Request.InputStream))
+                    prot = reader.ReadToEnd();
+            }
+            else if (ctx.Request.HttpMethod.Equals("GET"))
+            {
+                prot = request.QueryString["locus"];
+                if (!string.IsNullOrEmpty(prot))
+                    prot = Uri.UnescapeDataString(prot);
+            }
+            else
+            {
+                ctx.Response.Close();
+                return;
+            }
 
             // O nome do locus não deve ser vazio ou estar em branco
             if (string.IsNullOrWhiteSpace(prot))

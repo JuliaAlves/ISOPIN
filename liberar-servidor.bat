@@ -1,0 +1,1 @@
+netsh http add urlacl url=http://*:1250/ user=u16173 listen=yes

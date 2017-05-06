@@ -1,53 +1,83 @@
 <html>
-<head>
-    <link rel="stylesheet" href="estilo.css">    
-	<meta charset="utf-8">	
-	<title>Busca de proteínas</title>
-    
-    <script type="text/javascript">
-		function Procurar() {
-			var out = document.getElementById("resultado");
-			out.innerText = "Procurando proteína...";
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 		
-            var result = [];
-            
-			var ajax = new XMLHttpRequest();
-			ajax.onerror = function()
-			{
-				document.getElementById("resultado").innerText = "Falha ao conectar ao servidor";
-			};
-			
-            ajax.open("POST", "http://143.106.4.195:1250");
-            ajax.send(encodeURIComponent(document.getElementById("proteina").value));
-			
-			ajax.onreadystatechange = function()
-			{
-				if (ajax.readyState == 4)
-				{
-					out.innerText = "";                
-					var str = ajax.responseText;
-					var result = str.split(",");
-					for (var i = 0; i < result.length; i++) {
-						out.innerHTML += 
-							"<span class=" + ((i%2==0) ? "par" : "impar") + ">" + 
-                            result[i]+"</span><br>";
+		<title>Busca de proteínas</title>
+		
+		<!-- jQuery 3.2.1 -->
+		<script
+		  src="https://code.jquery.com/jquery-3.2.1.min.js"
+		  integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+		  crossorigin="anonymous"></script>
+		  
+		<!-- Bootstrap 3.3.7 -->
+		<link 
+			href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" 
+			rel="stylesheet" 
+			integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" 
+			crossorigin="anonymous">
+		<script 
+			src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" 
+			integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" 
+			crossorigin="anonymous"></script>
+		  
+		<!-- CSS próprio -->
+		<link rel="stylesheet" href="estilo.css">
+		
+		<script type="text/javascript">
+			var __server__;
+		
+			function Procurar() {
+				var out = $("#resultado");
+				out.text("Procurando proteína...");
+				
+				// Configurações da requisição do AJAX
+				var ajaxSettings = {
+					method: "POST",
+					
+					data: $("#proteina").val(),
+					dataType: "text",
+					
+					success: function(data) 
+					{
+						out.text("");
+						
+						var str = data;
+						var result = str.split(",");
+						for (var i = 0; i < result.length; i++) {
+							out.append(
+								"<span class=" + ((i%2==0) ? "par" : "impar") + ">" + 
+								result[i]+"</span><br>"
+							);
+						}
+					},
+					
+					error: function(xhr, ajaxOptions, thrownError)
+					{
+						out.text("Falha ao conectar ao servidor: " + thrownError);
 					}
-				}
-			};
-		}
-		</script>
-    
-</head>
-<body>
-	<!--<form action="143.106.4.195:1190" method="GET">-->
-    
+				};
+				
+				if (!!__server__)
+					$.ajax(__server__ , ajaxSettings);
+				else
+					$.getJSON("server.json", function(data) {
+						__server__ = "http://" + data.address + ":" + data.port;
+						$.ajax(__server__ , ajaxSettings);
+					});
+			}
+			</script>
+	</head>
+	
+	<body>
 		<div id="Busca">
-        <br>
+		<br>
 		Proteína a ser procurada:
 		<input type="text" name="locusProcurado" id="proteina">
-        <button onclick="Procurar()"></button>
+		<button onclick="Procurar()"></button>
 		</div>
 		<div id="resultado">
-        </div>
-</body>
+		</div>
+	</body>
 </html>
