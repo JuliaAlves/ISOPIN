@@ -71,13 +71,40 @@
 	</head>
 	
 	<body>
-		<div id="Busca">
-		<br>
-		Proteína a ser procurada:
-		<input type="text" name="locusProcurado" id="proteina">
-		<button onclick="Procurar()"></button>
+	<div class="container pag">
+		<nav class="navbar navbar-default cab">
+			<h3 class="logo">Proteínas</h3>
+		</nav>
+		<nav class="navbar navbar-default" id="Busca">
+		    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+		      <ul class="nav navbar-nav">
+		        <li><a href="#">Home</a></li>
+		        <li class="dropdown">
+		          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Algo<span class="caret"></span></a>
+		          <ul class="dropdown-menu">
+		            <li><a href="#">1</a></li>
+		            <li><a href="#">2</a></li>
+		            <li><a href="#">3</a></li>
+		            <li role="separator" class="divider"></li>
+		            <li><a href="#">4</a></li>
+		            <li role="separator" class="divider"></li>
+		            <li><a href="#">5</a></li>
+		          </ul>
+		        </li>
+		      </ul>
+		      <form class="navbar-form navbar-right">
+		        <div class="form-group">
+		          <label for="proteina">Locus:</label>
+		          <input type="text" class="form-control" placeholder="Search" name="locusProcurado" id="proteina">
+		        </div>
+		        <button type="submit" class="btn btn-default" onclick="Procurar()">Submit</button>
+		      </form>
+		        </li>
+		      </ul>
+		    </div><!-- /.navbar-collapse -->
+		</nav>
+		<div id="resultado" class="container">
 		</div>
-		<div id="resultado">
-		</div>
+	</div>
 	</body>
 </html>
