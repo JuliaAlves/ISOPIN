@@ -25,12 +25,25 @@ function Procurar(locus) {
 			out.text("");
 			
 			var str = data;
-			var result = str.split(",");
-			for (var i = 0; i < result.length; i++) {
-				out.append(
-					"<li class='list-group-item'><a href='?locus=" + result[i] + "'>" + 
-					result[i]+"</a></li>"
-				);
+
+			// Erros
+			if (str == "404: locus not found")
+			{
+				status.text("O locus especificado não existe no banco de dados");
+			}
+			else if (str == "empty locus name")
+			{
+				status.text("O nome do locus estava vazio");
+			}
+			else
+			{
+				var result = str.split(",");
+				for (var i = 0; i < result.length; i++) {
+					out.append(
+						"<li class='list-group-item'><a href='?locus=" + result[i] + "'>" + 
+						result[i]+"</a></li>"
+					);
+				}
 			}
 		},
 		
