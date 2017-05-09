@@ -17,43 +17,67 @@
 		
 		<!-- Script para a pesquisa -->
 		<script src="scripts/search.js" type="text/javascript"></script>
+
+		<script>
+			function closeHint() {
+				sessionStorage.disableHint = true;
+				$("body").css({paddingBottom: "0px"});
+			}
+		</script>
 	</head>
-	
 	<body>
-	<div class="container pag">
-		<nav class="navbar navbar-default cab">
-			<h3 class="logo">Proteínas</h3>
-		</nav>
-		<nav class="navbar navbar-default" id="Busca">
-		    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-		      <ul class="nav navbar-nav">
-		        <li><a href="#">Home</a></li>
-		        <li class="dropdown">
-		          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Algo<span class="caret"></span></a>
-		          <ul class="dropdown-menu">
-		            <li><a href="#">1</a></li>
-		            <li><a href="#">2</a></li>
-		            <li><a href="#">3</a></li>
-		            <li role="separator" class="divider"></li>
-		            <li><a href="#">4</a></li>
-		            <li role="separator" class="divider"></li>
-		            <li><a href="#">5</a></li>
-		          </ul>
-		        </li>
-		      </ul>
-		      <div class="navbar-form navbar-right">
-		        <div class="form-group">
-		          <label for="proteina">Locus:</label>
-		          <input type="text" class="form-control" placeholder="Search" name="locus" id="proteina">
-		        </div>
-		        <button type="submit" class="btn btn-default" onclick="Procurar($('#proteina').val())">Submit</button>
-		      </div>
-		        </li>
-		      </ul>
-		    </div><!-- /.navbar-collapse -->
-		</nav>
-		<div id="resultado" class="container">
+		<div class="container pag">
+			<nav class="navbar navbar-default cab">
+				<h3 class="logo">Proteínas</h3>
+			</nav>
+			<nav class="navbar navbar-default" id="Busca">
+			    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+			      <ul class="nav navbar-nav">
+			        <li><a href="#">Home</a></li>
+			        <li class="dropdown">
+			          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Algo<span class="caret"></span></a>
+			          <ul class="dropdown-menu">
+			            <li><a href="#">1</a></li>
+			            <li><a href="#">2</a></li>
+			            <li><a href="#">3</a></li>
+			            <li role="separator" class="divider"></li>
+			            <li><a href="#">4</a></li>
+			            <li role="separator" class="divider"></li>
+			            <li><a href="#">5</a></li>
+			          </ul>
+			        </li>
+			      </ul>
+			      <div class="navbar-form navbar-right">
+			        <div class="form-group">
+			          <label for="proteina">Locus:</label>
+			          <input type="text" class="form-control" placeholder="Search" name="locus" id="proteina">
+			        </div>
+			        <button type="submit" class="btn btn-default" onclick="Procurar($('#proteina').val())">Submit</button>
+			      </div>
+			        </li>
+			      </ul>
+			    </div>
+			</nav>
+			<ul id="resultado" class="list-group">
+			</ul>
+			<p class="text-muted" id="status"></p>
+			<div id="hint" class="navbar-fixed-bottom">
+				<div class="container">
+					<p class="text-muted">
+						Se quiser um exemplo, tente pesquisar por <a href='?locus=AT1G04020'>AT1G04020</a>
+						<button type="button" class="close" data-target="#hint" data-dismiss="alert" onclick="closeHint()">&times;</button>
+					</p>
+				</div>
+			</div>
+			<script>
+				$(document).ready(function() {
+					if (sessionStorage.disableHint != "true")
+					{
+						$("#hint").css({display: "block"});
+						$("body").css({paddingBottom: "60px"});
+					}
+				});
+			</script>
 		</div>
-	</div>
 	</body>
 </html>

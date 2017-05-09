@@ -2,11 +2,14 @@ var __server__;
 
 // Procura um locus no banco de dados e mostra o resultado
 function Procurar(locus) {
-	locus = locus.toUpperCase();
+	locus = locus.trim().toUpperCase();
 
 	var out = $("#resultado");
-	out.text("Procurando proteína...");
+	var status = $("#status");
+	status.text("Procurando proteína...");
 	
+	var startTime = new Date().getTime();
+
 	// Configurações da requisição do AJAX
 	var ajaxSettings = {
 		method: "POST",
@@ -16,21 +19,24 @@ function Procurar(locus) {
 		
 		success: function(data) 
 		{
+			var endTime = new Date().getTime();
+			status.text("Pesquisa terminada em " + (endTime - startTime) / 1000 + " segundos");
+
 			out.text("");
 			
 			var str = data;
 			var result = str.split(",");
 			for (var i = 0; i < result.length; i++) {
 				out.append(
-					"<span class=" + ((i%2==0) ? "par" : "impar") + "><a href='?locus=" + result[i] + "'>(" + 
-					result[i]+")</a></span><br>"
+					"<li class='list-group-item'><a href='?locus=" + result[i] + "'>" + 
+					result[i]+"</a></li>"
 				);
 			}
 		},
 		
 		error: function(xhr, ajaxOptions, thrownError)
 		{
-			out.text("Falha ao conectar ao servidor: " + thrownError);
+			status.text("Falha ao conectar ao servidor: " + thrownError);
 		}
 	};
 	
