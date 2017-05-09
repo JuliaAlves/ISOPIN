@@ -6,68 +6,17 @@
 		<title>Busca de proteínas</title>
 		
 		<!-- jQuery 3.2.1 -->
-		<script
-		  src="https://code.jquery.com/jquery-3.2.1.min.js"
-		  integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
-		  crossorigin="anonymous"></script>
+		<script src="scripts/jquery-3.2.1.min.js" type="text/javascript"></script>
 		  
 		<!-- Bootstrap 3.3.7 -->
-		<link 
-			href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" 
-			rel="stylesheet" 
-			integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" 
-			crossorigin="anonymous">
-		<script 
-			src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" 
-			integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" 
-			crossorigin="anonymous"></script>
+		<link href="style/bootstrap.min.css" rel="stylesheet">
+		<script src="scripts/bootstrap.min.js" type="text/javascript"></script>
 		  
 		<!-- CSS próprio -->
-		<link rel="stylesheet" href="estilo.css">
+		<link href="style/estilo.css" rel="stylesheet">
 		
-		<script type="text/javascript">
-			var __server__;
-		
-			function Procurar() {
-				var out = $("#resultado");
-				out.text("Procurando proteína...");
-				
-				// Configurações da requisição do AJAX
-				var ajaxSettings = {
-					method: "POST",
-					
-					data: $("#proteina").val(),
-					dataType: "text",
-					
-					success: function(data) 
-					{
-						out.text("");
-						
-						var str = data;
-						var result = str.split(",");
-						for (var i = 0; i < result.length; i++) {
-							out.append(
-								"<span class=" + ((i%2==0) ? "par" : "impar") + ">" + 
-								result[i]+"</span><br>"
-							);
-						}
-					},
-					
-					error: function(xhr, ajaxOptions, thrownError)
-					{
-						out.text("Falha ao conectar ao servidor: " + thrownError);
-					}
-				};
-				
-				if (!!__server__)
-					$.ajax(__server__ , ajaxSettings);
-				else
-					$.getJSON("server.json", function(data) {
-						__server__ = "http://" + data.address + ":" + data.port;
-						$.ajax(__server__ , ajaxSettings);
-					});
-			}
-			</script>
+		<!-- Script para a pesquisa -->
+		<script src="scripts/search.js" type="text/javascript"></script>
 	</head>
 	
 	<body>
@@ -92,13 +41,13 @@
 		          </ul>
 		        </li>
 		      </ul>
-		      <form class="navbar-form navbar-right">
+		      <div class="navbar-form navbar-right">
 		        <div class="form-group">
 		          <label for="proteina">Locus:</label>
-		          <input type="text" class="form-control" placeholder="Search" name="locusProcurado" id="proteina">
+		          <input type="text" class="form-control" placeholder="Search" name="locus" id="proteina">
 		        </div>
-		        <button type="submit" class="btn btn-default" onclick="Procurar()">Submit</button>
-		      </form>
+		        <button type="submit" class="btn btn-default" onclick="Procurar($('#proteina').val())">Submit</button>
+		      </div>
 		        </li>
 		      </ul>
 		    </div><!-- /.navbar-collapse -->

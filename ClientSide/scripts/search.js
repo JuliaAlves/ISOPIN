@@ -1,0 +1,65 @@
+var __server__;
+
+// Procura um locus no banco de dados e mostra o resultado
+function Procurar(locus) {
+	locus = locus.toUpperCase();
+
+	var out = $("#resultado");
+	out.text("Procurando proteína...");
+	
+	// Configurações da requisição do AJAX
+	var ajaxSettings = {
+		method: "POST",
+		
+		data: locus,
+		dataType: "text",
+		
+		success: function(data) 
+		{
+			out.text("");
+			
+			var str = data;
+			var result = str.split(",");
+			for (var i = 0; i < result.length; i++) {
+				out.append(
+					"<span class=" + ((i%2==0) ? "par" : "impar") + "><a href='?locus=" + result[i] + "'>(" + 
+					result[i]+")</a></span><br>"
+				);
+			}
+		},
+		
+		error: function(xhr, ajaxOptions, thrownError)
+		{
+			out.text("Falha ao conectar ao servidor: " + thrownError);
+		}
+	};
+	
+	if (!!__server__)
+		$.ajax(__server__ , ajaxSettings);
+	else
+		$.getJSON("server.json", function(data) {
+			__server__ = "http://" + data.address + ":" + data.port;
+			$.ajax(__server__ , ajaxSettings);
+		});
+}
+
+// Procura um locus usando a query string
+$(document).ready(function() {
+	var locus;
+
+	var query = window.location.search.substring(1);
+	var vars = query.split('&');
+	for (var i = 0; i < vars.length; i++) {
+	    var pair = vars[i].split('=');
+	    if (decodeURIComponent(pair[0]) == 'locus') {
+	        locus = decodeURIComponent(pair[1]);
+	        break;
+	    }
+	}
+
+	if (!!locus)
+	{
+		$("#proteina").val(locus);
+		Procurar(locus);
+	}
+});
