@@ -1,45 +1,28 @@
-#Busca{
+#menu {
     top: 0px;
     left: 0px;
 	text-align: center;
 	width: 100%;
-	height: 60px;
+	/* height: 60px; */
 	background-color: yellowgreen;
 }
 
-.pag{
+.pag
+{
     width: 70%;
     margin-left: 15%;
     margin-right: 15%;
 }
 
-
-.par {
-    position: absolute;
-    top: auto;
-    left: 0px;
-    width: 100%;
-    height: auto;
-    background-color: lightgray;
-}
-
-.impar {
-    position: absolute;
-    top: auto;
-    left: 0px;
-    width: 100%;
-    height: auto;
-    background-color: gray;
-    color: whitesmoke;
-}
-
-.cab{
+.cab 
+{
     height: 20%;
     background-color: lightgray;
     margin-bottom: 3px;
 }
 
-.logo{
+.logo
+{
     padding-left: 7%;
     padding-top: 3%;
 }
