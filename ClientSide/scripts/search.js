@@ -1,5 +1,28 @@
 var __server__;
 
+// Requisita um locus para o servidor
+function requestLocus(locus, onsuccess, onerror)
+{
+	var ajaxSettings = {
+		method: "POST",
+		
+		data: locus,
+		dataType: "text",
+		
+		success: onsuccess,
+		
+		error: onerror
+	};
+	
+	if (!!__server__)
+		$.ajax(__server__ , ajaxSettings);
+	else
+		$.getJSON("server.json", function(data) {
+			__server__ = "http://" + data.address + ":" + data.port;
+			$.ajax(__server__ , ajaxSettings);
+		});
+}
+
 // Procura um locus no banco de dados e mostra o resultado
 function Procurar(locus) {
 	locus = locus.trim().toUpperCase();
@@ -11,13 +34,11 @@ function Procurar(locus) {
 	var startTime = new Date().getTime();
 
 	// Configurações da requisição do AJAX
-	var ajaxSettings = {
-		method: "POST",
+	requestLocus(
+		locus,
 		
-		data: locus,
-		dataType: "text",
-		
-		success: function(data) 
+		// Callback de sucesso
+		function(data) 
 		{
 			var endTime = new Date().getTime();
 			status.text("Pesquisa terminada em " + (endTime - startTime) / 1000 + " segundos");
@@ -47,11 +68,12 @@ function Procurar(locus) {
 			}
 		},
 		
-		error: function(xhr, ajaxOptions, thrownError)
+		// Callback de erro
+		function(xhr, ajaxOptions, thrownError)
 		{
 			status.text("Falha ao conectar ao servidor: " + thrownError);
 		}
-	};
+	);
 	
 	if (!!__server__)
 		$.ajax(__server__ , ajaxSettings);

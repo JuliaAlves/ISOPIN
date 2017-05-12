@@ -82,7 +82,7 @@
 			<div id="hint" class="navbar-fixed-bottom">
 				<div class="container">
 					<p class="text-muted">
-						Se quiser um exemplo, tente pesquisar por <a href='?locus=AT1G04020'>AT1G04020</a>
+						Se quiser um exemplo, tente pesquisar por <a id="hint-locus" href='?locus=AT1G04020'>AT1G04020</a>
 						<button type="button" class="close" data-target="#hint" data-dismiss="alert" onclick="closeHint()">&times;</button>
 					</p>
 				</div>
@@ -94,6 +94,11 @@
 						$("#hint").css({display: "block"});
 						$("body").css({paddingBottom: "60px"});
 					}
+					
+					requestLocus("random", function(data) {
+						$("#hint-locus").text(data);
+						$("#hint-locus").attr("href", "?locus=" + data);
+					});
 				});
 			</script>
 		</div>
