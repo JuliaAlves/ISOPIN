@@ -45,3 +45,12 @@
   padding-right: 15px;
   padding-left: 15px;
 }
+
+.navbar-default .navbar-nav>.open>a, .navbar-default .navbar-nav>.open>a:focus, .navbar-default .navbar-nav>.open>a:hover{
+    background-color: #8abd22;
+
+}
+
+.navbar-default .navbar-toggle : hover{
+    background-color: #8abd22;
+}
