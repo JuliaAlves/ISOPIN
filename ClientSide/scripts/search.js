@@ -74,14 +74,6 @@ function Procurar(locus) {
 			status.text("Falha ao conectar ao servidor: " + thrownError);
 		}
 	);
-	
-	if (!!__server__)
-		$.ajax(__server__ , ajaxSettings);
-	else
-		$.getJSON("server.json", function(data) {
-			__server__ = "http://" + data.address + ":" + data.port;
-			$.ajax(__server__ , ajaxSettings);
-		});
 }
 
 // Procura um locus usando a query string
