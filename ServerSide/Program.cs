@@ -89,8 +89,10 @@ namespace ServerSide
                 return;
             }
 
+            prot = prot.Trim();
+
             // O nome do locus não deve ser vazio ou estar em branco
-            if (string.IsNullOrWhiteSpace(prot))
+            if (string.IsNullOrEmpty(prot))
             {
                 using (StreamWriter writer = new StreamWriter(ctx.Response.OutputStream))
                     writer.Write("empty locus name");
@@ -98,7 +100,10 @@ namespace ServerSide
                 return;
             }
 
-            Console.WriteLine("" + ctx.Request.RemoteEndPoint + " requisitou as interações para `" + prot + "'");
+            if (string.Compare(prot, "random", true) != 0)
+                Console.WriteLine("" + ctx.Request.RemoteEndPoint + " requisitou as interações para `" + prot + "'");
+            else
+                Console.WriteLine("" + ctx.Request.RemoteEndPoint + " requisitou um locus aleatório");
 
             // Define a string de conexão
             MySqlConnection connection;
@@ -124,11 +129,32 @@ namespace ServerSide
             // Verifica se a conexão está aberta
             if (connection.State == ConnectionState.Open)
             {
+                MySqlCommand command;
+                MySqlDataReader result;
+
+                // Se o nome do locus for 'random', retorna o nome de um locus aleatório
+                if (string.Compare(prot, "random", true) == 0)
+                {
+                    command = new MySqlCommand("SELECT locusA FROM interactome ORDER BY RAND() LIMIT 1", connection);
+                    result = command.ExecuteReader();
+
+                    if (result.HasRows)
+                    {
+                        result.Read();
+                        using (StreamWriter writer = new StreamWriter(ctx.Response.OutputStream))
+                            writer.Write(result.GetString(0));
+                        ctx.Response.Close();
+                        connection.Close();
+
+                        return;
+                    }
+                }
+
                 // Verifica se existe cache para esta busca
-                MySqlCommand command = new MySqlCommand("SELECT interactions FROM interaction_cache WHERE locus=@prot", connection);
+                command = new MySqlCommand("SELECT interactions FROM interaction_cache WHERE locus=@prot", connection);
                 command.Parameters.AddWithValue("@prot", prot);
 
-                MySqlDataReader result = command.ExecuteReader();
+                result = command.ExecuteReader();
 
                 List<string> results;
                 string interactions;
