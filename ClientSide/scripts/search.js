@@ -1,7 +1,7 @@
 var __server__;
 
 // Envia uma requisição para o servidor
-function doRequest(query, onsuccess, onerror)
+function sendRequest(query, onsuccess, onerror)
 {
 	var ajaxSettings = {
 		method: "POST",
@@ -26,21 +26,49 @@ function doRequest(query, onsuccess, onerror)
 // Requisita um locus para o servidor
 function requestLocus(locus, onsuccess, onerror)
 {
-	doRequest("LOCUS " + locus, onsuccess, onerror);
+	sendRequest("LOCUS " + locus, onsuccess, onerror);
 }
 
 // Requisita um nome de proteína aleatório
 function requestRandom(onsuccess, onerror)
 {
-	doRequest("RANDOM", onsuccess, onerror);
+	sendRequest("RANDOM", onsuccess, onerror);
+}
+
+// Evento de edição do input de pesquisa
+function pesquisaEdited()
+{
+    var input = $("#proteina");
+    var submit = $("#submit");
+    var locus = input.val().trim();
+
+    if (!input[0].checkValidity())
+        input.parent().addClass("has-error");
+    else
+        input.parent().removeClass("has-error");
+
+    if (locus == "")
+        submit.attr("disabled", true);
+    else
+        submit.removeAttr("disabled");
 }
 
 // Procura um locus no banco de dados e mostra o resultado
-function Procurar(locus) {
-	locus = locus.trim().toUpperCase();
-
-	var out = $("#resultado");
+function Procurar() {
+    var out = $("#resultado");
 	var status = $("#status");
+
+    var input = $("#proteina");
+    var locus = input.val().toUpperCase().trim();
+    input.val(locus);
+
+    if (!input[0].checkValidity())
+    {
+        out.text("");
+        status.text("O nome da proteína não pode estar vazio nem conter espaços");
+        return;
+    }
+
 	status.text("Procurando proteína...");
 
 	var startTime = new Date().getTime();
@@ -99,29 +127,34 @@ function Procurar(locus) {
 		{
 			out.text("");
 
-			switch (xhr.status)
-			{
-				case 500:
-					status.text("O servidor apresentou erros internos. Consulte o administrador do sistema para mais informações.");
-					break;
-				case 503:
-					status.text("O banco de dados se encontra indisponível. Tente novamente mais tarde.");
-					break;
-				case 400:
-					if (thrownError == "Empty locus name")
-					{
-						status.text("O nome do locus estava vazio");
-						break;
-					}
-				default:
-					status.text("Falha ao conectar ao servidor: " + thrownError);
-			}
+            if (xhr.readyState == 0)
+                status.text("Servidor indisponível. Tente novamente mais tarde.");
+            else
+			    switch (xhr.status)
+			    {
+				    case 500:
+					    status.text("O servidor apresentou erros internos. Consulte o administrador do sistema para mais informações.");
+					    break;
+				    case 503:
+					    status.text("O banco de dados se encontra indisponível. Tente novamente mais tarde.");
+					    break;
+				    case 400:
+					    if (thrownError == "Empty locus name")
+					    {
+						    status.text("O nome do locus estava vazio");
+						    break;
+					    }
+				    default:
+					    status.text("Falha ao conectar ao servidor: " + thrownError);
+			    }
 		}
 	);
 }
 
 // Procura um locus usando a query string
 $(document).ready(function() {
+    $("#proteina").on('input', pesquisaEdited);
+
 	var locus;
 
 	var query = window.location.search.substring(1);
@@ -137,6 +170,7 @@ $(document).ready(function() {
 	if (!!locus)
 	{
 		$("#proteina").val(locus);
+        pesquisaEdited();
 		Procurar(locus);
 	}
 });

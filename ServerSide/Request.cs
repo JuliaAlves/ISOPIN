@@ -7,7 +7,7 @@ namespace ServerSide
     /// <summary>
     /// Classe para as requisições recebidas pelo servidor
     /// </summary>
-    public class Request
+    sealed class Request
     {
         readonly HttpListenerContext _ctx;
 
@@ -55,15 +55,17 @@ namespace ServerSide
             _ctx.Response.AppendHeader("Access-Control-Allow-Origin", "*");
 
             // Só responde requisições feitas por POST ou GET
-            if (_ctx.Request.HttpMethod.Equals("POST"))
-                ParsePOSTData();
-            else if (_ctx.Request.HttpMethod.Equals("GET"))
-                ParseGETData();
-			else
-			{
-                Respond("405 Method Not Allowed", HttpStatusCode.MethodNotAllowed);
-                IsOpen = false;
-			}
+            try
+            {
+                if (_ctx.Request.HttpMethod.Equals("POST"))
+                    ParsePOSTData();
+                else if (_ctx.Request.HttpMethod.Equals("GET"))
+                    ParseGETData();
+                else
+                    Respond("405 Method Not Allowed", HttpStatusCode.MethodNotAllowed);
+            } catch (BadRequestException) {
+                Respond("400 Bad Request", HttpStatusCode.BadRequest);
+            }
         }
 
 		/// <summary>
@@ -76,30 +78,28 @@ namespace ServerSide
 				command = reader.ReadToEnd().Trim();
 			string[] parts = command.Split(' ');
 
-			try
-			{
+            try {
 				if (string.Compare("locus", parts[0], true) == 0)
 				{
 					Code = RequestCode.Specific;
 					Protein = parts[1];
 
 					if (parts.Length > 2)
-						throw new Exception();
+						throw new BadRequestException("Wrong number of arguments for method `LOCUS'");
 				}
 				else if (string.Compare("random", parts[0], true) == 0)
 				{
 					Code = RequestCode.Random;
 
 					if (parts.Length > 1)
-						throw new Exception();
+						throw new BadRequestException("Wrong number of arguments for method `RANDOM'");
 				}
 				else
-					throw new Exception();
+                    throw new BadRequestException("Unknown method");
 			}
-			catch (Exception)
+			catch (Exception e)
 			{
-				Respond("403 Bad Request", HttpStatusCode.BadRequest);
-				IsOpen = false;
+                throw new BadRequestException("Unknown error", e);
 			}
 		}
 
@@ -119,10 +119,7 @@ namespace ServerSide
                 Code = RequestCode.Random;
             }
             else
-            {
-                Respond("403 Bad Request", HttpStatusCode.BadRequest);
-                IsOpen = false;
-            }
+                throw new BadRequestException("Unknown method");
         }
 
         /// <summary>
@@ -136,6 +133,8 @@ namespace ServerSide
 			using (StreamWriter writer = new StreamWriter(_ctx.Response.OutputStream))
 				writer.Write(response);
 			_ctx.Response.Close();
+
+            IsOpen = false;
         }
     }
 }
