@@ -15,7 +15,6 @@ namespace ServerSide
     {
         private static HttpListener listener;
 
-
         /// <summary>
         /// Inicialização do console
         /// </summary>
@@ -55,7 +54,20 @@ namespace ServerSide
                 while (listener.IsListening)
                 {
                     HttpListenerContext ctx = listener.GetContext();
-                    Task.Run(() => ProcessRequest(ctx));
+                    Task.Run(() =>
+                    {
+                        Request r = new Request(ctx);
+
+                        try
+                        {
+                            ProcessRequest(r);
+                        } catch {
+                            r.Respond("500 Internal Server Error", HttpStatusCode.InternalServerError);
+                        }
+
+                        if (r.IsOpen)
+                            r.Respond("");
+                    });
                 }
             });
         }
@@ -63,48 +75,25 @@ namespace ServerSide
         /// <summary>
         /// Processa uma requisição
         /// </summary>
-        /// <param name="ctx">HttpListenerContext recebido pelo listener</param>
-        private static void ProcessRequest(HttpListenerContext ctx)
+        /// <param name="request">Requisição recebida pelo servidor</param>
+        private static void ProcessRequest(Request request)
         {
-            ctx.Response.AppendHeader("Access-Control-Allow-Origin", "*");
+            if (!request.IsOpen)
+                return;
 
-            HttpListenerRequest request = ctx.Request;
-            string prot;
-
-            // Só responde requisições feitas por POST ou GET
-            if (ctx.Request.HttpMethod.Equals("POST"))
-            {
-                using (StreamReader reader = new StreamReader(ctx.Request.InputStream))
-                    prot = reader.ReadToEnd();
-            }
-            else if (ctx.Request.HttpMethod.Equals("GET"))
-            {
-                prot = request.QueryString["locus"];
-                if (!string.IsNullOrEmpty(prot))
-                    prot = Uri.UnescapeDataString(prot);
-            }
+            if (request.Code == Request.RequestCode.Random)
+                Console.WriteLine("{0} requisitou um locus aleatório", request.RemoteEndPoint);
             else
             {
-                ctx.Response.Close();
-                return;
+                if (string.IsNullOrEmpty(request.Protein))
+                {
+                    request.Respond("Empty locus name", HttpStatusCode.BadRequest);
+                    return;
+                }
+
+                Console.WriteLine("{0} requisitou as interações para `{1}'", request.RemoteEndPoint, request.Protein);
             }
-
-            prot = prot.Trim();
-
-            // O nome do locus não deve ser vazio ou estar em branco
-            if (string.IsNullOrEmpty(prot))
-            {
-                using (StreamWriter writer = new StreamWriter(ctx.Response.OutputStream))
-                    writer.Write("empty locus name");
-                ctx.Response.Close();
-                return;
-            }
-
-            if (string.Compare(prot, "random", true) != 0)
-                Console.WriteLine("" + ctx.Request.RemoteEndPoint + " requisitou as interações para `" + prot + "'");
-            else
-                Console.WriteLine("" + ctx.Request.RemoteEndPoint + " requisitou um locus aleatório");
-
+            
             // Define a string de conexão
             MySqlConnection connection;
             Assembly assembly = Assembly.GetCallingAssembly();
@@ -118,11 +107,9 @@ namespace ServerSide
             }
             catch (Exception e)
             {
-                Console.WriteLine("Falha na conexão com o banco de dados: " + e.Message);
+                Console.WriteLine("Falha na conexão com o banco de dados: {0}", e.Message);
 
-                using (StreamWriter writer = new StreamWriter(ctx.Response.OutputStream))
-                    writer.Write("failed: DB offline");
-                ctx.Response.Close();
+                request.Respond("503 Service Unavailable", HttpStatusCode.ServiceUnavailable);
                 return;
             }
 
@@ -133,7 +120,7 @@ namespace ServerSide
                 MySqlDataReader result;
 
                 // Se o nome do locus for 'random', retorna o nome de um locus aleatório
-                if (string.Compare(prot, "random", true) == 0)
+                if (request.Code == Request.RequestCode.Random)
                 {
                     command = new MySqlCommand("SELECT locusA FROM interactome ORDER BY RAND() LIMIT 1", connection);
                     result = command.ExecuteReader();
@@ -141,10 +128,9 @@ namespace ServerSide
                     if (result.HasRows)
                     {
                         result.Read();
-                        using (StreamWriter writer = new StreamWriter(ctx.Response.OutputStream))
-                            writer.Write(result.GetString(0));
-                        ctx.Response.Close();
-                        connection.Close();
+                        request.Respond(result.GetString(0));
+
+                        Console.WriteLine("Resposta enviada para {0}", request.RemoteEndPoint);
 
                         return;
                     }
@@ -152,7 +138,7 @@ namespace ServerSide
 
                 // Verifica se existe cache para esta busca
                 command = new MySqlCommand("SELECT interactions FROM interaction_cache WHERE locus=@prot", connection);
-                command.Parameters.AddWithValue("@prot", prot);
+                command.Parameters.AddWithValue("@prot", request.Protein);
 
                 result = command.ExecuteReader();
 
@@ -167,7 +153,7 @@ namespace ServerSide
 
                     // Seleciona todas as interações onde o locus procurado esteja como locusA ou locusB
                     command = new MySqlCommand("SELECT locusA, locusB FROM interactome WHERE locusA=@prot or locusB=@prot", connection);
-                    command.Parameters.AddWithValue("@prot", prot);
+                    command.Parameters.AddWithValue("@prot", request.Protein);
                     result = command.ExecuteReader();
 
                     // Se não achou nenhuma entrada com aquela proteína, ela não existe
@@ -175,11 +161,9 @@ namespace ServerSide
                     {
                         result.Close();
 
-                        Console.WriteLine("O locus requisitado por " + ctx.Request.RemoteEndPoint + " não foi encontrado no banco de dados");
+                        Console.WriteLine("O locus requisitado por {0} não foi encontrado no banco de dados", request.RemoteEndPoint);
 
-                        using (StreamWriter writer = new StreamWriter(ctx.Response.OutputStream))
-                            writer.Write("404: locus not found");
-                        ctx.Response.Close();
+                        request.Respond("", HttpStatusCode.NoContent);
                         connection.Close();
 
                         return;
@@ -191,7 +175,7 @@ namespace ServerSide
                         string locusA = result.GetString("locusA");
                         string locusB = result.GetString("locusB");
 
-                        if (locusA.Equals(prot))
+                        if (locusA.Equals(request.Protein))
                             results.Add(locusB);
                         else
                             results.Add(locusA);
@@ -212,7 +196,7 @@ namespace ServerSide
 
                     // Salva o cache para a busca feita
                     command = new MySqlCommand("INSERT INTO interaction_cache VALUES(@prot, @interactions)", connection);
-                    command.Parameters.AddWithValue("@prot", prot);
+                    command.Parameters.AddWithValue("@prot", request.Protein);
                     command.Parameters.AddWithValue("@interactions", interactions);
                     command.ExecuteNonQuery();
                     command.Dispose();
@@ -228,20 +212,16 @@ namespace ServerSide
                 result.Close();
                 command.Dispose();
 
-                if (string.IsNullOrWhiteSpace(interactions))
-                    interactions = "(none)";
+                if (!string.IsNullOrWhiteSpace(interactions))
+                    request.Respond(interactions);
 
-                Console.WriteLine("Resposta enviada para " + ctx.Request.RemoteEndPoint);
-
-                using (StreamWriter writer = new StreamWriter(ctx.Response.OutputStream))
-                    writer.Write(interactions);
+                Console.WriteLine("Resposta enviada para {0}", request.RemoteEndPoint);
             }
             else
             {
                 Console.WriteLine("Falha na conexão com o banco de dados");
             }
 
-            ctx.Response.Close();
             connection.Close();
         }
     }
