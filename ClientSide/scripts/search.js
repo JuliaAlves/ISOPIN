@@ -23,6 +23,35 @@ function sendRequest(query, onsuccess, onerror)
 		});
 }
 
+// Callback de erro
+function erro(xhr, ajaxOptions, thrownError)
+{
+    var out = $("#resultado");
+    var status = $("#status");
+    out.text("");
+
+    if (xhr.readyState == 0)
+        status.text("Servidor indisponível. Tente novamente mais tarde.");
+    else
+        switch (xhr.status)
+        {
+            case 500:
+                status.text("O servidor apresentou erros internos. Consulte o administrador do sistema para mais informações.");
+                break;
+            case 503:
+                status.text("O banco de dados se encontra indisponível. Tente novamente mais tarde.");
+                break;
+            case 400:
+                if (thrownError == "Empty locus name")
+                {
+                    status.text("O nome do locus estava vazio");
+                    break;
+                }
+            default:
+                status.text("Falha ao conectar ao servidor: " + thrownError);
+        }
+}
+
 // Requisita um locus para o servidor
 function requestLocus(locus, onsuccess, onerror)
 {
@@ -98,8 +127,9 @@ function Procurar() {
 				var result = str.split(",");
 				for (var i = 0; i < result.length; i++) {
 					out.append(
-						"<li class='list-group-item'><a href='?locus=" + result[i] + "'>" +
-						result[i]+"</a></li>"
+						"<li class='list-group-item'><a href='?locus=" + result[i] + "' class='result-item'>" +
+						result[i]+"</a>"+
+                        "<span class='more glyphicon glyphicon-plus' onclick='detalhes("+i+")'></span><br><div class='target'></div></li>"
 					);
 				}
 			}
@@ -121,34 +151,23 @@ function Procurar() {
 				}
 			}
 		},
-
-		// Callback de erro
-		function(xhr, ajaxOptions, thrownError)
-		{
-			out.text("");
-
-            if (xhr.readyState == 0)
-                status.text("Servidor indisponível. Tente novamente mais tarde.");
-            else
-			    switch (xhr.status)
-			    {
-				    case 500:
-					    status.text("O servidor apresentou erros internos. Consulte o administrador do sistema para mais informações.");
-					    break;
-				    case 503:
-					    status.text("O banco de dados se encontra indisponível. Tente novamente mais tarde.");
-					    break;
-				    case 400:
-					    if (thrownError == "Empty locus name")
-					    {
-						    status.text("O nome do locus estava vazio");
-						    break;
-					    }
-				    default:
-					    status.text("Falha ao conectar ao servidor: " + thrownError);
-			    }
-		}
+        
+        erro
 	);
+}
+
+function detalhes(i){
+    var protDiv = $(".result-item")[i];
+    if(protDiv.style.display == 'none'){
+        protDiv.style.display = 'block'
+        sendRequest("info "+protDiv.text, function(data){
+            
+        }, 
+        erro);   
+    }
+    else{
+        protDiv.style.display = 'none';
+    }
 }
 
 // Procura um locus usando a query string

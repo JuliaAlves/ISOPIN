@@ -54,3 +54,32 @@
 .navbar-default .navbar-toggle : hover{
     background-color: #8abd22;
 }
+
+.more{
+    position: relative;
+    float: right;
+    background-color: transparent;
+    border: 0px solid transparent;
+    color:  lightgrey;
+}
+.more:hover{
+    background-color: inherit;
+    color: grey;
+    cursor: pointer;
+}
+
+.more:focus{
+    background-color: inherit;
+    color: inherit;
+}
+
+.more:active {
+    background-color: inherit;
+    color: inherit;
+}
+
+.target{
+    background-color: greenyellow;
+    display: none;
+    
+}
