@@ -58,6 +58,12 @@ function requestLocus(locus, onsuccess, onerror)
 	sendRequest("LOCUS " + locus, onsuccess, onerror);
 }
 
+// Requisita informações de um interactoma para o servidor
+function requestInfo(locusA, locusB, onsuccess, onerror)
+{
+	sendRequest("INFO " + locusA + " " + locusB, onsuccess, onerror);
+}
+
 // Requisita um nome de proteína aleatório
 function requestRandom(onsuccess, onerror)
 {
@@ -156,18 +162,28 @@ function Procurar() {
 	);
 }
 
-function detalhes(i){
-    var protDiv = $(".result-item")[i];
-    if(protDiv.style.display == 'none'){
-        protDiv.style.display = 'block'
-        sendRequest("info "+protDiv.text, function(data){
-            
-        }, 
-        erro);   
+// Mostra as informações para uma interação
+function detalhes(i)
+{
+	var input = $("#proteina");
+    var locus = input.val().toUpperCase().trim();
+
+    var item = $(".result-item")[i];
+    var div = $(item).parent().find(".target");
+
+    if (!div.is(":visible"))
+    {
+    	if (div.text() == "")
+	        requestInfo(locus, item.text, function(data){
+	            div.text(data);
+	            div.css({display: "block"});
+	        },
+	        erro);
+	    else
+	    	div.css({display: "block"});
     }
-    else{
-        protDiv.style.display = 'none';
-    }
+    else
+        div.css({display: "none"});
 }
 
 // Procura um locus usando a query string
