@@ -7,6 +7,12 @@ namespace ServerSide
     public class LocusNotFoundException : Exception {}
 
     /// <summary>
+    /// Exceção disparada quando as informações para um interactoma não são 
+    /// encontradas no banco de dados
+    /// </summary>
+    public class InfoForInteractomeNotFoundException : Exception { }
+
+    /// <summary>
     /// Exceção disparada quando uma requisição é determinada inválida
     /// </summary>
     public class BadRequestException : Exception {

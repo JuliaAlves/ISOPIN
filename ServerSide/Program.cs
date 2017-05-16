@@ -109,26 +109,26 @@ namespace ServerSide
 
 			if (db.Connected)
 			{
-                switch (request.Code)
+                switch (request.Method)
                 {
-                    case Request.RequestCode.Random:
+                    case Request.RequestMethod.Random:
                         Log("{0} requisitou uma proteína aleatória", request.RemoteEndPoint);
                         request.Respond(db.GetRandom());
                         break;
 
-                    case Request.RequestCode.Specific:
+                    case Request.RequestMethod.Specific:
                         
-						if (string.IsNullOrEmpty(request.Protein))
+						if (string.IsNullOrEmpty(request.ProteinA))
 						{
 							request.Respond("Empty locus name", HttpStatusCode.BadRequest);
 							return;
 						}
 
-                        Log("{0} requisitou as interações para `{1}'", request.RemoteEndPoint, request.Protein);
+                        Log("{0} requisitou as interações para `{1}'", request.RemoteEndPoint, request.ProteinA);
 
                         try
                         {
-                            string interactions = db.GetInteractionsForProtein(request.Protein);
+                            string interactions = db.GetInteractionsForProtein(request.ProteinA);
 
                             if (!string.IsNullOrWhiteSpace(interactions))
                                 request.Respond(interactions);
@@ -139,6 +139,26 @@ namespace ServerSide
 							request.Respond("", HttpStatusCode.NoContent);
                         }
 						
+                        break;
+
+                    case Request.RequestMethod.Info:
+                        if (string.IsNullOrEmpty(request.ProteinA) || string.IsNullOrEmpty(request.ProteinB))
+                        {
+                            request.Respond("Empty locus name", HttpStatusCode.BadRequest);
+                            return;
+                        }
+
+                        Log("{0} requisitou as informação para a interação `{1}' -> `{2}'", request.RemoteEndPoint, request.ProteinA, request.ProteinB);
+
+                        try
+                        {
+                            request.Respond(db.GetInfoForInteraction(request.ProteinA, request.ProteinB));
+                        }
+                        catch (LocusNotFoundException)
+                        {
+                            Log("Informação não encontrada para a requisição feita por {0}", request.RemoteEndPoint);
+                            request.Respond("", HttpStatusCode.NoContent);
+                        }
                         break;
                 }
 

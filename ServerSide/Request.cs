@@ -14,16 +14,17 @@ namespace ServerSide
         /// <summary>
         /// Enumerador de códigos de tipo de requisição
         /// </summary>
-        public enum RequestCode
+        public enum RequestMethod
         {
             Specific,
+            Info,
             Random
         }
 
         /// <summary>
         /// Código do tipo de requisição
         /// </summary>
-        public RequestCode Code { get; private set; }
+        public RequestMethod Method { get; private set; }
 
         /// <summary>
         /// Booleano que indica se a requisição é válida
@@ -35,7 +36,13 @@ namespace ServerSide
         /// Proteína requisitada
         /// </summary>
         /// <value>Nome da proteína cujas interações foream requisitadas</value>
-        public string Protein { get; private set; }
+        public string ProteinA { get; private set; }
+
+        /// <summary>
+        /// Proteína que interage com a requisitada
+        /// </summary>
+        /// <value>Nome da proteína cujas interações foream requisitadas</value>
+        public string ProteinB { get; private set; }
 
         /// <summary>
         /// Obtém o ponto remoto do cliente
@@ -81,15 +88,24 @@ namespace ServerSide
             try {
 				if (string.Compare("locus", parts[0], true) == 0)
 				{
-					Code = RequestCode.Specific;
-					Protein = parts[1];
+					Method = RequestMethod.Specific;
+					ProteinA = parts[1];
 
 					if (parts.Length > 2)
 						throw new BadRequestException("Wrong number of arguments for method `LOCUS'");
 				}
-				else if (string.Compare("random", parts[0], true) == 0)
+                else if (string.Compare("info", parts[0], true) == 0)
+                {
+                    Method = RequestMethod.Info;
+                    ProteinA = parts[1];
+                    ProteinB = parts[2];
+
+                    if (parts.Length > 3)
+                        throw new BadRequestException("Wrong number of arguments for method `INFO'");
+                }
+                else if (string.Compare("random", parts[0], true) == 0)
 				{
-					Code = RequestCode.Random;
+					Method = RequestMethod.Random;
 
 					if (parts.Length > 1)
 						throw new BadRequestException("Wrong number of arguments for method `RANDOM'");
@@ -99,6 +115,9 @@ namespace ServerSide
 			}
 			catch (Exception e)
 			{
+                if (e.GetType() == typeof(BadRequestException))
+                    throw e;
+
                 throw new BadRequestException("Unknown error", e);
 			}
 		}
@@ -108,15 +127,24 @@ namespace ServerSide
         /// </summary>
         private void ParseGETData()
         {
-            Protein = _ctx.Request.QueryString["locus"];
-            if (!string.IsNullOrEmpty(Protein))
+            ProteinA = _ctx.Request.QueryString["locus"];
+            ProteinB = _ctx.Request.QueryString["info"];
+
+            if (!string.IsNullOrEmpty(ProteinA))
             {
-                Code = RequestCode.Specific;
-                Protein = Uri.UnescapeDataString(Protein);
+                if (!string.IsNullOrEmpty(ProteinB))
+                {
+                    Method = RequestMethod.Info;
+                    ProteinB = Uri.UnescapeDataString(ProteinB);
+                }
+                else
+                    Method = RequestMethod.Specific;
+
+                ProteinA = Uri.UnescapeDataString(ProteinA);
             }
             else if (string.Compare(_ctx.Request.QueryString[null], "random", true) == 0)
             {
-                Code = RequestCode.Random;
+                Method = RequestMethod.Random;
             }
             else
                 throw new BadRequestException("Unknown method");
