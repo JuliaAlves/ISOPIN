@@ -121,6 +121,7 @@ namespace ServerSide
 						if (string.IsNullOrEmpty(request.ProteinA))
 						{
 							request.Respond("Empty locus name", HttpStatusCode.BadRequest);
+                            db.Close();
 							return;
 						}
 
@@ -145,6 +146,7 @@ namespace ServerSide
                         if (string.IsNullOrEmpty(request.ProteinA) || string.IsNullOrEmpty(request.ProteinB))
                         {
                             request.Respond("Empty locus name", HttpStatusCode.BadRequest);
+                            db.Close();
                             return;
                         }
 

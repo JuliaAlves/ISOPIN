@@ -83,3 +83,38 @@
     display: none;
     margin-top: 16px;
 }
+
+.target.expanded {
+    display: block;
+}
+
+.target.collapsed {
+    display: none;
+}
+
+.table {
+    width: 100%;
+}
+
+.more.rotated {
+    transition-duration: .2s;
+    transform: rotateZ(180deg);
+}
+
+.more.unrotated {
+    transition-duration: .2s;
+    transform: rotateZ(0deg);
+}
+
+th, td {
+    padding: 8px;
+}
+
+td ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+td ul li {
+    margin-bottom: 8px;
+}

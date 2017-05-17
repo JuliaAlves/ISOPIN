@@ -105,6 +105,7 @@ function Procurar() {
     function(data, textStatus, xhr) {
         var endTime = new Date().getTime();
         out.text("");
+        $("#expand-collapse").css({display: "none"});
 
         var str = data;
 
@@ -114,11 +115,10 @@ function Procurar() {
                 return;
             }
 
-						$("#expand-collapse").css({display: "block"});
+			$("#expand-collapse").css({display: "block"});
 
             var result = str.split(",");
-
-						status.text(result.length + " results (" + (endTime - startTime) / 1000 + " seconds)");
+				status.text(result.length + " results (" + (endTime - startTime) / 1000 + " seconds)");
 
             for (var i = 0; i < result.length; i++)
                 out.append("<li class='list-group-item'><a href='?locus=" + result[i] + "' class='result-item'>" + result[i] + "</a>" + "<span class='more glyphicon glyphicon-chevron-down' onclick='detalhes(" + i + ")'></span><br><div class='target'></div></li>");
@@ -153,44 +153,59 @@ function detalhes(i) {
 
     var item = $(".result-item")[i];
     var div = $(item).parent().find(".target");
+    var btn = $(item).parent().find(".more");
 
     if (!div.is(":visible")) {
         if (div.text() == "")
             requestInfo(locus, item.text, function(data, textStatus, xhr) {
                 if (xhr.status == 200)
-                    div.text(data);
-                else {
+                {
+                	console.log(data);
+                	var info = JSON.parse(data);
+                	var table = "";
+                	table += "<table class='table'>";
+                    table += "<thead><tr><th>Method</th><th>FSW</th><th>C3</th><th>Description</th></tr></thead>";
+                    table += "<tbody><tr>";
+
+                    table += "<td>"
+                    table += "<ul>";
+                    for (var i = 0; i < info.method.length; i++)
+                    	table += "<li>" + info.method[i] + "</li>";
+                    table += "</ul>";
+                    table += "</td>";
+
+                    table += "<td>" + info.fsw + "</td>";
+                    table += "<td>" + info.local + "</td>";
+                    table += "<td>" + info.description.toUpperCase() + "</td>";
+                    table += "</tr></tbody>";
+                    table += "</table>";
+
+                    div.html(table);
+                } else {
                     div.append("<span class='error text-danger'>There's nothing about this interaction on the database.</span><br>");
                     div.append("That might be a bug, contact a system administrator for further information.");
                 }
-
-                div.css({
-                    display: "block"
-                });
             }, erro);
-        else
-            div.css({
-                display: "block"
-            });
-    } else
-        div.css({
-            display: "none"
-        });
+
+        div.removeClass("collapsed").addClass("expanded")
+        btn.removeClass("unrotated").addClass("rotated");
+    } else {
+    	btn.removeClass("rotated").addClass("unrotated");
+        div.removeClass("expanded").addClass("collapsed");
+    }
 }
 
 // Mostra as informações de todas as interações
 function expandAll() {
     $(".result-item").each(detalhes);
-    $(".result-item").parent().find(".target").css({
-        display: "block"
-    });
+    $(".result-item").parent().find(".target").removeClass("collapsed").addClass("expanded")
+    $(".more").removeClass("unrotated").addClass("rotated");
 }
 
 // Fecha as informações de todas as interações
 function collapseAll() {
-    $(".result-item").parent().find(".target").css({
-        display: "none"
-    });
+    $(".result-item").parent().find(".target").removeClass("expanded").addClass("collapsed");
+    $(".more").removeClass("rotated").addClass("unrotated");
 }
 
 // Procura um locus usando a query string

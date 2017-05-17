@@ -130,17 +130,14 @@ namespace ServerSide
                 json += "], ";
 
                 // Descrição da proteína
-                json += string.Format("\"description\": \"{0}\", ", Regex.Unescape(result.GetString("desc")));
+                json += string.Format("\"description\": \"{0}\"", Regex.Unescape(result.GetString("desc")));
 
                 // Locais de interação
-                json += "\"local\": ";
-
                 string[] l = result.GetString("local").Split(',');
 
-                if (string.IsNullOrEmpty(l[0]))
-                    json += "undefined";
-                else
+                if (!string.IsNullOrEmpty(l[0]))
                 {
+                    json += ", \"local\": [";
                     for (int i = 0; i < l.Length; i++)
                     {
                         json += string.Format("\"{0}\"", l[i]);
