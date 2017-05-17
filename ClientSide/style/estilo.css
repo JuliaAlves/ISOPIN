@@ -1,28 +1,29 @@
 #menu {
     top: 0px;
     left: 0px;
-	text-align: center;
-	width: 100%;
-	/* height: 60px; */
-	background-color: yellowgreen;
+    text-align: center;
+    width: 100%;
+    /* height: 60px; */
+    background-color: yellowgreen;
 }
 
-.pag
-{
+#expand-collapse {
+  display: none;
+}
+
+.pag {
     width: 70%;
     margin-left: 15%;
     margin-right: 15%;
 }
 
-.cab 
-{
+.cab {
     height: 20%;
     background-color: lightgray;
     margin-bottom: 3px;
 }
 
-.logo
-{
+.logo {
     padding-left: 7%;
     padding-top: 3%;
 }
@@ -38,37 +39,37 @@
 }
 
 .container .text-muted {
-  margin: 20px 0;
+    margin: 20px 0;
 }
 
 #hint > .container {
-  padding-right: 15px;
-  padding-left: 15px;
+    padding-right: 15px;
+    padding-left: 15px;
 }
 
-.navbar-default .navbar-nav>.open>a, .navbar-default .navbar-nav>.open>a:focus, .navbar-default .navbar-nav>.open>a:hover{
-    background-color: #8abd22;
-
-}
-
-.navbar-default .navbar-toggle : hover{
+.navbar-default .navbar-nav>.open>a, .navbar-default .navbar-nav>.open>a:focus, .navbar-default .navbar-nav>.open>a:hover {
     background-color: #8abd22;
 }
 
-.more{
+.navbar-default .navbar-toggle : hover {
+    background-color: #8abd22;
+}
+
+.more {
     position: relative;
     float: right;
     background-color: transparent;
     border: 0px solid transparent;
-    color:  lightgrey;
+    color: lightgrey;
 }
-.more:hover{
+
+.more:hover {
     background-color: inherit;
     color: grey;
     cursor: pointer;
 }
 
-.more:focus{
+.more:focus {
     background-color: inherit;
     color: inherit;
 }
@@ -78,8 +79,7 @@
     color: inherit;
 }
 
-.target{
-    background-color: greenyellow;
+.target {
     display: none;
-    
+    margin-top: 16px;
 }

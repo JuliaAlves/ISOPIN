@@ -28,10 +28,10 @@
 	<body>
 		<div class="container pag">
 
-			
+
 			<nav class="navbar navbar-default" id="menu">
 			  <div class="container-fluid">
-			    
+
 			    <div class="navbar-header">
 			      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
 			        <span class="sr-only">Toggle navigation</span>
@@ -39,9 +39,9 @@
 			        <span class="icon-bar"></span>
 			        <span class="icon-bar"></span>
 			      </button>
-			      <a class="navbar-brand" href="#">Proteínas</a>
+			      <a class="navbar-brand" href="#">Proteins</a>
 			    </div>
-			    
+
 			    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
 			      <ul class="nav navbar-nav">
 			        <li><a href="#">Link</a></li>
@@ -75,6 +75,10 @@
 			</nav>
 
 			<!-- Lista onde são mostradas as reações -->
+			<ul id="expand-collapse" class="list-inline text-right">
+				<li><a href="#" onclick="expandAll()">Expand all</a></li>
+				<li><a href="#" onclick="collapseAll()">Collapse all</a></li>
+			</ul>
 			<ul id="resultado" class="list-group">
 			</ul>
 
@@ -85,7 +89,7 @@
 			<div id="hint" class="navbar-fixed-bottom">
 				<div class="container">
 					<p class="text-muted">
-						Se quiser um exemplo, tente pesquisar por <a id="hint-locus" href='?locus=AT1G04020'>AT1G04020</a>
+						If you don't have any locus in mind, try searching for <a id="hint-locus" href='?locus=AT1G04020'>AT1G04020</a>
 						<button type="button" class="close" data-target="#hint" data-dismiss="alert" onclick="closeHint()">&times;</button>
 					</p>
 				</div>
