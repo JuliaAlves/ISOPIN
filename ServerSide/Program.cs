@@ -79,8 +79,8 @@ namespace ServerSide
 		static void Log(string format, params object[] parameters)
 		{
             Console.WriteLine(
-                "[{0}, {1}] {2}",
-                DateTime.Now.ToLongDateString(),
+                "[{0} {1}] {2}",
+                DateTime.Now.ToShortDateString(),
                 DateTime.Now.ToLongTimeString(), 
                 string.Format(format, parameters)
             );
@@ -154,7 +154,7 @@ namespace ServerSide
                         {
                             request.Respond(db.GetInfoForInteraction(request.ProteinA, request.ProteinB));
                         }
-                        catch (LocusNotFoundException)
+                        catch (InfoForInteractomeNotFoundException)
                         {
                             Log("Informação não encontrada para a requisição feita por {0}", request.RemoteEndPoint);
                             request.Respond("", HttpStatusCode.NoContent);

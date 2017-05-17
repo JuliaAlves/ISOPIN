@@ -93,30 +93,6 @@ namespace ServerSide
         }
 
         /// <summary>
-        /// Obtém todas as proteínas que seguem um padrão de nome
-        /// </summary>
-        /// <param name="pattern">Padrão a ser pesquisado</param>
-        /// <returns>Uma string com todas as proteínas do banco de dados </returns>
-        public string FindProteins(string pattern)
-        {
-            string proteins = "",
-                    query = "SELECT locus FROM tair WHERE locus LIKE CONCAT('%', @0, '%')";
-
-            using (MySqlDataReader result = ExecuteQuery(query, pattern))
-            {
-                if (!result.HasRows)
-                    throw new LocusNotFoundException();
-
-                while (result.Read())
-                    proteins += result.GetString("locus") + ",";
-
-                proteins = proteins.TrimEnd(',');
-            }
-
-            return proteins;
-        }
-
-        /// <summary>
         /// Obtém as informações para um interactoma onde a proteína A é a pesquisada e a B
         /// é a que interage com ela
         /// </summary>
