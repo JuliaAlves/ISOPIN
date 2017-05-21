@@ -118,3 +118,11 @@ td ul {
 td ul li {
     margin-bottom: 8px;
 }
+
+tr td .glyphicon {
+	color: #ccc;
+}
+
+tr.success .glyphicon, tr.info .glyphicon {
+	color: black;
+}

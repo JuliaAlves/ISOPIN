@@ -99,8 +99,8 @@ function Procurar() {
 
     var startTime = new Date().getTime();
 
-    // Configurações da requisição do AJAX
     requestLocus(locus,
+	
     // Callback de sucesso
     function(data, textStatus, xhr) {
         var endTime = new Date().getTime();
@@ -118,10 +118,10 @@ function Procurar() {
 			$("#expand-collapse").css({display: "block"});
 
             var result = str.split(",");
-				status.text(result.length + " results (" + (endTime - startTime) / 1000 + " seconds)");
+			status.text(result.length + " results (" + (endTime - startTime) / 1000 + " seconds)");
 
             for (var i = 0; i < result.length; i++)
-                out.append("<li class='list-group-item'><a href='?locus=" + result[i] + "' class='result-item'>" + result[i] + "</a>" + "<span class='more glyphicon glyphicon-chevron-down' onclick='detalhes(" + i + ")'></span><br><div class='target'></div></li>");
+                out.append("<li class='list-group-item'><a href='?locus=" + result[i] + "' class='result-item'>" + result[i] + "</a>" + "<span class='more glyphicon glyphicon-chevron-down' onclick='MostrarDetalhes(" + i + ")'></span><br><div class='target'></div></li>");
 
         } else if (xhr.status == 204) {
             status.text("The given protein could not be found on the database");
@@ -143,11 +143,89 @@ function Procurar() {
             }
         }
     },
+	
     erro);
 }
 
+// Procura as interações para dois locus e mostra o resultado na
+// forma de tabela
+function ProcurarDois(a, b) {
+    var out = $("#resultado");
+    var status = $("#status");
+
+    status.text("Searching...");
+
+    var startTime = new Date().getTime();
+
+	var dA = { locus: a };
+	var dB = { locus: b, other: dA };
+	dA.other = dB;
+	
+	function sucesso(data)
+	{
+		var other = this.other;
+		
+		this.interactions = data;
+		
+		if (other.interactions != undefined)
+		{
+			var iA = this.interactions.split(",");
+			var iB = other.interactions.split(",");
+			var all = [];
+			
+			for (var i = 0; i < iA.length; i++)
+				all.push(iA[i]);
+			
+			for (var i = 0; i < iB.length; i++)
+				if (all.indexOf(iB[i]) < 0) 
+					all.push(iB[i]);
+			
+			s = "";
+			s += "<thead><tr>";
+			s += "<th></th>";
+			s += "<th>" + this.locus + "</th>";
+			s += "<th>" + other.locus + "</th>";
+			s += "</tr></thead><tbody>";
+			
+			for (var i = 0; i < all.length; i++)
+			{
+				var interactsWithA = iA.indexOf(all[i]) >= 0;
+				var interactsWithB = iB.indexOf(all[i]) >= 0;
+				
+				
+				if (
+					(all[i] == this.locus && interactsWithB) || 
+					(all[i] == other.locus && interactsWithA)
+				)
+					s += "<tr class='info'>";
+				else if (
+					(all[i] == this.locus && interactsWithA) || 
+					(all[i] == other.locus && interactsWithB)
+				)
+					s += "<tr class='warning'>";
+				else if (interactsWithA && interactsWithB)
+					s += "<tr class='success'>";
+				else
+					s += "<tr>";
+				s += "<th>" + all[i] + "</th>";
+				s += "<td><span class='glyphicon " + (interactsWithA ? "glyphicon-ok" : "glyphicon-remove") + "'></span></td>";
+				s += "<td><span class='glyphicon " + (interactsWithB ? "glyphicon-ok" : "glyphicon-remove") + "'></span></td>";
+				s += "</tr>";
+			}
+			
+			s += "</tbody>";
+			
+			out.html(s);
+			status.text(all.length + " results (" + (new Date().getTime() - startTime) / 1000 + " seconds)");
+		}
+	}
+	
+    requestLocus(a, sucesso.bind(dA), erro);
+    requestLocus(b, sucesso.bind(dB), erro);
+}
+
 // Mostra as informações para uma interação
-function detalhes(i) {
+function MostrarDetalhes(i) {
     var input = $("#proteina");
     var locus = input.val().toUpperCase().trim();
 
@@ -163,7 +241,7 @@ function detalhes(i) {
                 	console.log(data);
                 	var info = JSON.parse(data);
                 	var table = "";
-                	table += "<table class='table'>";
+                	table += "<table class='table table-responsive'>";
                     table += "<thead><tr><th>Method</th><th>FSW</th><th>C3</th><th>Description</th></tr></thead>";
                     table += "<tbody><tr>";
 
@@ -197,7 +275,7 @@ function detalhes(i) {
 
 // Mostra as informações de todas as interações
 function expandAll() {
-    $(".result-item").each(detalhes);
+    $(".result-item").each(MostrarDetalhes);
     $(".result-item").parent().find(".target").removeClass("collapsed").addClass("expanded")
     $(".more").removeClass("unrotated").addClass("rotated");
 }
@@ -212,21 +290,26 @@ function collapseAll() {
 $(document).ready(function() {
     $("#proteina").on('input', pesquisaEdited);
 
-    var locus;
+    var locus, other;
 
     var query = window.location.search.substring(1);
     var vars = query.split('&');
     for (var i = 0; i < vars.length; i++) {
         var pair = vars[i].split('=');
-        if (decodeURIComponent(pair[0]) == 'locus') {
+        if (decodeURIComponent(pair[0]) == 'locus')
             locus = decodeURIComponent(pair[1]);
-            break;
-        }
+		else if (decodeURIComponent(pair[0]) == 'other')
+			other = decodeURIComponent(pair[1]);
     }
 
     if (!!locus) {
-        $("#proteina").val(locus);
-        pesquisaEdited();
-        Procurar(locus);
+		if (!!other)
+			ProcurarDois(locus, other);
+		else
+		{
+			$("#proteina").val(locus);
+			pesquisaEdited();
+			Procurar();
+		}
     }
 });
