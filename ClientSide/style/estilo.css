@@ -126,3 +126,18 @@ tr td .glyphicon {
 tr.success .glyphicon, tr.info .glyphicon {
 	color: black;
 }
+
+.dropdown{
+    display: inline;
+}
+
+.search-pair {
+    text-decoration: none;
+    color: inherit;
+    margin-right: 12px;
+}
+
+.search-pair:hover {
+    text-decoration: none;
+    color: inherit;
+}

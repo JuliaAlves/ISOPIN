@@ -67,6 +67,27 @@ function requestRandom(onsuccess, onerror) {
 function pesquisaEdited() {
     var input = $("#proteina");
     var submit = $("#submit");
+    var more= $("#moreLocus");
+    var locus = input.val().trim();
+
+    if (!input[0].checkValidity())
+        input.parent().addClass("has-error");
+    else
+        input.parent().removeClass("has-error");
+
+    if (locus == ""){
+        submit.attr("disabled", true);
+        more.attr("disabled", true);
+    }
+    else{
+        submit.removeAttr("disabled");
+        more.removeAttr("disabled");
+    }
+}
+
+function pesquisa2Edited() {
+    var input = $("#proteina2");
+    var submit = $("#submit2");
     var locus = input.val().trim();
 
     if (!input[0].checkValidity())
@@ -121,7 +142,7 @@ function Procurar() {
 			status.text(result.length + " results (" + (endTime - startTime) / 1000 + " seconds)");
 
             for (var i = 0; i < result.length; i++)
-                out.append("<li class='list-group-item'><a href='?locus=" + result[i] + "' class='result-item'>" + result[i] + "</a>" + "<span class='more glyphicon glyphicon-chevron-down' onclick='MostrarDetalhes(" + i + ")'></span><br><div class='target'></div></li>");
+                out.append("<li class='list-group-item'><a class='glyphicon glyphicon-transfer search-pair' href='?locus=" + locus + "&other=" + result[i] + "'></a><a href='?locus=" + result[i] + "' class='result-item'>" + result[i] + "</a><span class='more glyphicon glyphicon-chevron-down' onclick='MostrarDetalhes(" + i + ")'></span><br><div class='target'></div></li>");
 
         } else if (xhr.status == 204) {
             status.text("The given protein could not be found on the database");
@@ -149,11 +170,19 @@ function Procurar() {
 
 // Procura as interações para dois locus e mostra o resultado na
 // forma de tabela
-function ProcurarDois(a, b) {
+function ProcurarDois() {
     var out = $("#resultado");
     var status = $("#status");
 
     status.text("Searching...");
+
+    var input1 = $("#proteina");
+    var a = input1.val().toUpperCase().trim();
+    input1.val(a);
+
+    var input2 = $("#proteina2");
+    var b = input2.val().toUpperCase().trim();
+    input2.val(b);
 
     var startTime = new Date().getTime();
 
@@ -169,6 +198,7 @@ function ProcurarDois(a, b) {
 		
 		if (other.interactions != undefined)
 		{
+            $("#expand-collapse").css({display: "none"});
 			var iA = this.interactions.split(",");
 			var iB = other.interactions.split(",");
 			var all = [];
@@ -180,7 +210,7 @@ function ProcurarDois(a, b) {
 				if (all.indexOf(iB[i]) < 0) 
 					all.push(iB[i]);
 			
-			s = "";
+			s = "<table class='table table-responsive'>";
 			s += "<thead><tr>";
 			s += "<th></th>";
 			s += "<th>" + this.locus + "</th>";
@@ -213,7 +243,8 @@ function ProcurarDois(a, b) {
 				s += "</tr>";
 			}
 			
-			s += "</tbody>";
+			s += "</tbody></table>";
+
 			
 			out.html(s);
 			status.text(all.length + " results (" + (new Date().getTime() - startTime) / 1000 + " seconds)");
@@ -238,7 +269,6 @@ function MostrarDetalhes(i) {
             requestInfo(locus, item.text, function(data, textStatus, xhr) {
                 if (xhr.status == 200)
                 {
-                	console.log(data);
                 	var info = JSON.parse(data);
                 	var table = "";
                 	table += "<table class='table table-responsive'>";
@@ -289,6 +319,7 @@ function collapseAll() {
 // Procura um locus usando a query string
 $(document).ready(function() {
     $("#proteina").on('input', pesquisaEdited);
+    $("#proteina2").on('input', pesquisa2Edited);
 
     var locus, other;
 
@@ -304,7 +335,13 @@ $(document).ready(function() {
 
     if (!!locus) {
 		if (!!other)
-			ProcurarDois(locus, other);
+		{
+			$("#proteina").val(locus);
+			$("#proteina2").val(other);
+			pesquisaEdited();
+			pesquisa2Edited();
+			ProcurarDois();
+		}
 		else
 		{
 			$("#proteina").val(locus);
