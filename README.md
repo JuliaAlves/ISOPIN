@@ -1,6 +1,6 @@
 # Configuração
 
-O projeto requer um arquivo db.dat na pasta do servidor (`ServerSide`), que não é incluído no repositório por motivos de segurança,
+O projeto requer um arquivo `db.dat` na pasta do servidor (`ServerSide`), que não é incluído no repositório por motivos de segurança,
 o arquivo deve conter uma string de conexão no seguinte formato:
 
 ``` 
