@@ -141,3 +141,13 @@ tr.success .glyphicon, tr.info .glyphicon {
     text-decoration: none;
     color: inherit;
 }
+
+.pesquisa{
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+.expandir{
+    border-top-left-radius: 0%;
+    border-bottom-left-radius: 0%;
+}
