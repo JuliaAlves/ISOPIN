@@ -16,14 +16,7 @@
 		<link href="style/estilo.css" rel="stylesheet">
 
 		<!-- Script para a pesquisa -->
-		<script src="scripts/search.js" type="text/javascript"></script>
-
-		<script>
-			function closeHint() {
-				sessionStorage.disableHint = true;
-				$("body").css({paddingBottom: "0px"});
-			}
-		</script>
+		<script src="scripts/atpin.js" type="text/javascript"></script>
 	</head>
 	<body>
 		<div class="container pag">
@@ -59,7 +52,7 @@
 							<div class="input-group">
 								<input type="text" class="form-control" placeholder="Search" pattern="\s*\S+\s*" id="proteina" maxlength="11">
 								<div class="input-group-btn">
-									<button class="btn btn-default" disabled onclick="Procurar()" id="submit">
+									<button class="btn btn-default" disabled onclick="ATPIN.searchSingle()" id="submit">
 										&nbsp;
 										<span class="glyphicon glyphicon-search"></span>
 										&nbsp;
@@ -75,7 +68,7 @@
 												<div class="input-group">
 													<input type="text" class="form-control" placeholder="Search" pattern="\s*\S+\s*" id="proteina2" maxlength="11">
 													<div class="input-group-btn">
-														<button class="btn btn-default" disabled onclick="ProcurarDois()" id="submit2">
+														<button class="btn btn-default" disabled onclick="ATPIN.searchTwo()" id="submit2">
 															&nbsp;
 															<span class="glyphicon glyphicon-search"></span>
 															&nbsp;
@@ -94,11 +87,10 @@
 
 			<!-- Lista onde são mostradas as reações -->
 			<ul id="expand-collapse" class="list-inline text-right">
-				<li><a href="#" onclick="expandAll()">Expand all</a></li>
-				<li><a href="#" onclick="collapseAll()">Collapse all</a></li>
+				<li><a href="#" onclick="ATPIN.expandAll()">Expand all</a></li>
+				<li><a href="#" onclick="ATPIN.collapseAll()">Collapse all</a></li>
 			</ul>
-			<ul id="resultado" class="list-group">
-			</ul>
+            <div id="result"></div>
 
 			<!-- Texto indicando o estado da pesquisa -->
 			<p class="text-muted" id="status"></p>
@@ -108,24 +100,10 @@
 				<div class="container">
 					<p class="text-muted">
 						If you don't have any locus in mind, try searching for <a id="hint-locus" href='?locus=AT1G04020'>AT1G04020</a>
-						<button type="button" class="close" data-target="#hint" data-dismiss="alert" onclick="closeHint()">&times;</button>
+						<button type="button" class="close" data-target="#hint" data-dismiss="alert" onclick="ATPIN.closeHint()">&times;</button>
 					</p>
 				</div>
 			</div>
-			<script>
-				$(document).ready(function() {
-					if (sessionStorage.disableHint != "true")
-					{
-						$("#hint").css({display: "block"});
-						$("body").css({paddingBottom: "60px"});
-
-						requestRandom(function(data) {
-							$("#hint-locus").text(data);
-							$("#hint-locus").attr("href", "?locus=" + data);
-						});
-					}
-				});
-			</script>
 		</div>
 	</body>
 </html>
