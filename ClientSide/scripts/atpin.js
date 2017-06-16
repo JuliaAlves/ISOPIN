@@ -3,7 +3,8 @@ var ATPIN = {};
 (function(module) {
 
     var __server__,
-        __lastSearched__;
+        __lastSearched__,
+        __lastReceivedData__;
 
     //
     // Envia uma requisição para o servidor
@@ -130,7 +131,12 @@ var ATPIN = {};
 
                 $("#expand-collapse").css({display: "block"});
 
+                $("#expand-all").css({display: "inline"});
+                $("#collapse-all").css({display: "inline"});
+                $("#show-graph").css({display: "none"});
+
                 var result = data.split(",");
+                __lastReceivedData__ = result;
                 status.text(result.length + " results (" + msElapsed / 1000 + " seconds)");
                 
                 // Exibe a lista de resultados
@@ -208,6 +214,8 @@ var ATPIN = {};
         status.text("Searching...");
 
         var startTime = new Date().getTime();
+
+        __lastSearched__ = [a, b];
     
         // Objetos para armazenar as interações dos dois locus
         var dA = { locus: a };
@@ -228,9 +236,17 @@ var ATPIN = {};
 
             if (other.interactions != undefined)
             {
+                __lastReceivedData__ = { a: this, b: other };
+
                 var msElapsed = new Date().getTime() - startTime;
                 
-                $("#expand-collapse").css({ display: "none" });
+                $("#expand-collapse").css({display: "block"});
+                $("#expand-all").css({display: "none"});
+                $("#collapse-all").css({display: "none"});
+
+                $("#show-graph").css({display: "inline"});
+                $("#show-graph").html("<a href='#' onclick='ATPIN.showGraph()'>Show Graph</a>");
+
                 var all = [];
 
                 // Cria uma lista de todas as proteínas que o par de locus procurados
@@ -393,6 +409,80 @@ var ATPIN = {};
         sessionStorage.disableHint = true;
         $("body").css({paddingBottom: "0px"});
     };
+
+    //
+    // Mostra as interações da proteína na forma de grafo
+    //
+    module.showGraph = function() {
+        var out = $("#result"),
+            status  = $("#status");
+
+        out.text("");
+        status.text("");
+
+        var svg = $("<svg id='graph' width='960' height='640'></svg>"); 
+        out.append(svg);
+        svg.bind('mousewheel DOMMouseScroll', mouseWheelHandler);
+
+        var graph = new ATPIN.Graph(svg);
+
+        var a = __lastReceivedData__.a;
+        var b = __lastReceivedData__.b;
+
+        graph.addVertex(a.locus);
+        graph.addVertex(b.locus);
+
+        for (var i = 0; i < a.interactions.length; i++)
+        {
+            var p = a.interactions[i];
+
+            if (p == b.locus || p == a.locus)
+                continue;
+
+            if (b.interactions.some(function(c) { return c == p; }))
+                graph.addSatelliteVertex([a.locus, b.locus], p);
+            else
+                graph.addSatelliteVertex(a.locus, p);
+        }
+
+        for (var i = 0; i < b.interactions.length; i++)
+        {
+            var p = b.interactions[i];
+            
+            if (p == b.locus || p == a.locus)
+                continue;
+
+            if (!a.interactions.some(function(c) { return c == p; }))
+                graph.addSatelliteVertex(b.locus, p);
+        }
+
+        graph.render();
+
+        $("#show-graph").html("<a href='#' onclick='ATPIN.searchTwo()'>Show Table</a>");
+    };
+
+    //
+    // Controlador para zoom com a roda do mouse
+    //
+    function mouseWheelHandler(e) {
+        var evt = window.event || e;
+        var scroll = evt.detail ? evt.detail * 0.05 : (evt.wheelDelta / 120) * 0.05;
+        var transform = $("#viewport").attr("transform").replace(/ /g,"");
+        var vector = transform.substring(transform.indexOf("(") + 1, transform.indexOf(")")).split(",")
+        
+        if ((scroll < 0 && parseFloat(vector[0]) < 0.1) || (scroll > 0 && parseFloat(vector[0]) > 4.0))
+            return;
+
+        vector[0] = parseFloat(vector[0]) + scroll;
+        vector[1] = vector[0];
+
+        var width = $("#graph").attr("width"),
+            height = $("#graph").attr("height");
+
+        $("#viewport").attr("transform", "scale(" + vector.join(",") + ")");
+
+        return true;
+    }
 
     //
     // Evento de edição do input de pesquisa
