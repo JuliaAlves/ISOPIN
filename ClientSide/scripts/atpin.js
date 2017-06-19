@@ -4,7 +4,8 @@ var ATPIN = {};
 
     var __server__,
         __lastSearched__,
-        __lastReceivedData__;
+        __lastReceivedData__,
+        __graph__;
 
     //
     // Envia uma requisição para o servidor
@@ -422,15 +423,16 @@ var ATPIN = {};
 
         var svg = $("<svg id='graph' width='960' height='640'></svg>"); 
         out.append(svg);
-        svg.bind('mousewheel DOMMouseScroll', mouseWheelHandler);
 
-        var graph = new ATPIN.Graph(svg);
+        __graph__ = new ATPIN.Graph(svg);
+
+        svg.bind('mousewheel DOMMouseScroll', mouseWheelHandler);
 
         var a = __lastReceivedData__.a;
         var b = __lastReceivedData__.b;
 
-        graph.addVertex(a.locus);
-        graph.addVertex(b.locus);
+        __graph__.addVertex(a.locus);
+        __graph__.addVertex(b.locus);
 
         for (var i = 0; i < a.interactions.length; i++)
         {
@@ -439,10 +441,8 @@ var ATPIN = {};
             if (p == b.locus || p == a.locus)
                 continue;
 
-            if (b.interactions.some(function(c) { return c == p; }))
-                graph.addSatelliteVertex([a.locus, b.locus], p);
-            else
-                graph.addSatelliteVertex(a.locus, p);
+            __graph__.addVertex(p);
+            __graph__.addEdge(p, a.locus);
         }
 
         for (var i = 0; i < b.interactions.length; i++)
@@ -453,10 +453,42 @@ var ATPIN = {};
                 continue;
 
             if (!a.interactions.some(function(c) { return c == p; }))
-                graph.addSatelliteVertex(b.locus, p);
+                __graph__.addVertex(p);
+
+            __graph__.addEdge(p, b.locus);
         }
 
-        graph.render();
+        __graph__.addEdge(a.locus, b.locus);
+        __graph__.render();
+
+        svg.attr("width", "100%");
+        svg.attr("height", "100%");
+
+        var mousedown = false, cx = 0, cy = 0;
+
+        svg.bind("mousedown", function(e) {
+            mousedown = true;
+            cx = e.clientX;
+            cy = e.clientY;
+
+            svg.css("cursor", "move");
+        })
+        .bind("mouseup mouseout", function(e) {
+            mousedown = false;
+            svg.css("cursor", "default");
+        })
+        .bind("mousemove", function(e) {
+            if (!mousedown)
+                return;
+
+            var dx = cx - e.clientX, dy = cy - e.clientY;
+
+            cx = e.clientX;
+            cy = e.clientY;
+
+            var translation = __graph__.translation;
+            __graph__.translation = { x: translation.x - dx, y: translation.y - dy };
+        });
 
         $("#show-graph").html("<a href='#' onclick='ATPIN.searchTwo()'>Show Table</a>");
     };
@@ -467,19 +499,13 @@ var ATPIN = {};
     function mouseWheelHandler(e) {
         var evt = window.event || e;
         var scroll = evt.detail ? evt.detail * 0.05 : (evt.wheelDelta / 120) * 0.05;
-        var transform = $("#viewport").attr("transform").replace(/ /g,"");
-        var vector = transform.substring(transform.indexOf("(") + 1, transform.indexOf(")")).split(",")
         
-        if ((scroll < 0 && parseFloat(vector[0]) < 0.1) || (scroll > 0 && parseFloat(vector[0]) > 4.0))
+        if ((scroll < 0 && __graph__.scale < 0.1) || (scroll > 0 && __graph__.scale > 4.0))
             return;
 
-        vector[0] = parseFloat(vector[0]) + scroll;
-        vector[1] = vector[0];
+        __graph__.scale += scroll;
 
-        var width = $("#graph").attr("width"),
-            height = $("#graph").attr("height");
-
-        $("#viewport").attr("transform", "scale(" + vector.join(",") + ")");
+        e.preventDefault();
 
         return true;
     }
