@@ -1,5 +1,5 @@
 ﻿using System;
-namespace ServerSide
+namespace ATPIN
 {
     /// <summary>
     /// Exceção disparada quando um locus não é encontrado no banco de dados

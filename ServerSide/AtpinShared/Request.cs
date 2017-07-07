@@ -2,7 +2,7 @@
 using System.IO;
 using System.Net;
 
-namespace ServerSide
+namespace ATPIN
 {
     /// <summary>
     /// Classe para as requisições recebidas pelo servidor

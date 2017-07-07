@@ -1,12 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using System.Text.RegularExpressions;
 using MySql.Data.MySqlClient;
 using System.Globalization;
 
-namespace ServerSide
+namespace ATPIN
 {
     /// <summary>
     /// Classe para interação com o banco de dados
@@ -33,8 +31,8 @@ namespace ServerSide
         private static string GetConnectionString()
         {
             string str;
-			Assembly assembly = Assembly.GetCallingAssembly();
-            using (StreamReader r = new StreamReader(assembly.GetManifestResourceStream("ServerSide.db.dat")))
+			Assembly assembly = Assembly.GetExecutingAssembly();
+            using (StreamReader r = new StreamReader(assembly.GetManifestResourceStream("ATPIN.db.dat")))
                 str = r.ReadToEnd();
 
             return str;
