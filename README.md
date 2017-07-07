@@ -26,17 +26,17 @@ xbuild ProjetoPratica.sln
 ```
 
 Alternativamente, pode-se usar o MonoDevelop para compilar a solução.
-Testado com Ubuntu 16.04.
 
 # Executando
 
 ## Servidor
 
 ### Windows
-Abra o executável gerado para o servidor (`ServerSide.exe`) normalmente.
+Para a versão console, abra o executável gerado para o servidor (`atpinsv.exe`) normalmente.
+Para a versão daemon... Boa sorte :^)
 
 ### Linux
-Execute o binário gerado usando Mono:
+Para a versão console, execute o binário gerado (`atpinsv.exe`) usando Mono:
 
 ```
 mono ServerSide.exe
@@ -44,8 +44,20 @@ mono ServerSide.exe
 
 O MonoDevelop também pode ser usado para executar a aplicação.
 
+Para a versão daemon, execute o binário (`atpinsvd.exe`) usando `mono-service`:
+```
+mono-service -l:/tmp/atpin-server.lock atpinsvd.exe [-o /tmp/atpin.log]
+```
+
+Isso cria um arquivo lock `/tmp/atpin-server.lock` com o PID do processo do servidor e, opcionalmente, um arquivo
+`/tmp/atpin.log` com o log do servidor. Para monitorar o log em tempo real, use o comando `tail`:
+```
+tail -f /tmp/atpin.log
+```
+
 ## Site
 Para usar o cliente, crie um servidor HTTP na pasta `ClientSide` e acesse-o normalmente utilizando um browser WEB.
+Nota.: Não abra o arquivo `index.html` diretamente no browser, o programa não funciona com `file://`.
 
 Para uma criação fácil de servidor HTTP pode-se usar o módulo SimpleHTTPServer do Python:
 ```
