@@ -27,7 +27,7 @@ var ATPIN = {};
             $.ajax(__server__, ajaxSettings);
         else
             $.getJSON("server.json", function(data) {
-                __server__ = "http://" + data.address + ":" + data.port;
+                __server__ = location.protocol + "//" + data.address + ":" + data.port;
                 $.ajax(__server__, ajaxSettings);
             });
     }
@@ -524,11 +524,13 @@ var ATPIN = {};
         else
             input.parent().removeClass("has-error");
 
-        if (locus == ""){
+        if (locus == "") 
+        {
             submit.attr("disabled", true);
             more.attr("disabled", true);
         }
-        else{
+        else 
+        {
             submit.removeAttr("disabled");
             more.removeAttr("disabled");
         }
@@ -573,7 +575,8 @@ var ATPIN = {};
                 other = decodeURIComponent(pair[1]);
         }
 
-        if (!!locus) {
+        if (!!locus) 
+        {
             if (!!other)
             {
                 $("#proteina").val(locus);
