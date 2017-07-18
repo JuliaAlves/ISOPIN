@@ -65,6 +65,11 @@
 									</div>
 								</div>
 							</div>
+							<button class="btn btn-default" onclick="ATPIN.showHistory()">
+								&nbsp;
+								<span class="glyphicon glyphicon-calendar"></span>
+								&nbsp;
+							</button>
 						</div>
 					</div>
 				</div>
@@ -75,8 +80,9 @@
 				<li id="expand-all"><a href="#" onclick="ATPIN.expandAll()">Expand all</a></li>
 				<li id="collapse-all"><a href="#" onclick="ATPIN.collapseAll()">Collapse all</a></li>
 				<li id="show-graph"><a href="#" onclick="ATPIN.showGraph()">Show Graph</a></li>
+				<li id="clear-history"><a href="#" onclick="ATPIN.clearHistory()">Clear History</a></li>
 			</ul>
-            <div id="result"></div>
+			<div id="result"></div>
 
 			<!-- Texto indicando o estado da pesquisa -->
 			<p class="text-muted" id="status"></p>

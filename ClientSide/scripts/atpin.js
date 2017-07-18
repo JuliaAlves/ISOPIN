@@ -15,10 +15,10 @@ var ATPIN = {};
     function sendRequest(query, onsuccess, onerror) {
         var ajaxSettings = {
             method: "POST",
-            
+
             data: query,
             dataType: "text",
-            
+
             success: onsuccess,
             error: onerror
         };
@@ -86,17 +86,39 @@ var ATPIN = {};
         sendRequest("RANDOM", onsuccess, onerror);
     }
 
+		//
+		// Adiciona uma busca ao histórico
+		//
+		function addToHistory(query)
+		{
+			if (!window.localStorage)
+				return;
+
+			if (window.localStorage.history === undefined)
+				window.localStorage.history = "";
+
+			entries = window.localStorage.history.split("\0");
+
+			var i = entries.indexOf(query);
+			if (i >= 0)
+				entries.splice(i, 1);
+
+			entries.push(query);
+
+			window.localStorage.history = entries.join("\0");
+		}
+
     //
-    // Procura um locus no banco de dados e mostra a lista de proteínas 
+    // Procura um locus no banco de dados e mostra a lista de proteínas
     // que interagem com ele
     //
     module.searchSingle = function() {
         var out     = $("#result"),
             status  = $("#status"),
             input   = $("#proteina");
-        
+
         out.text("");
-        
+
         // Formata a entrada
         var locus = input.val().toUpperCase().trim();
         input.val(locus);
@@ -108,23 +130,30 @@ var ATPIN = {};
             status.text("Protein name can't be empty nor have white spaces");
             return;
         }
-        
+
+				addToHistory("S" + locus);
+
         __lastSearched__ = locus;
 
         status.text("Searching...");
 
+				$("#expand-all").css({display: "inline"});
+				$("#collapse-all").css({display: "inline"});
+				$("#show-graph").css({display: "none"});
+				$("#clear-history").css({display: "none"});
+
         var startTime = new Date().getTime();
 
         function success(data, textStatus, xhr) {
-            
+
             var msElapsed = new Date().getTime() - startTime;
-            
+
             out.text("");
             $("#expand-collapse").css({display: "none"});
 
             // Se o código de sucesso for 200 (OK), mostra o resultado na tela
             if (xhr.status == 200) {
-                
+
                 if (data == undefined) {
                     status.text("No interactions found for the given protein.");
                     return;
@@ -132,17 +161,13 @@ var ATPIN = {};
 
                 $("#expand-collapse").css({display: "block"});
 
-                $("#expand-all").css({display: "inline"});
-                $("#collapse-all").css({display: "inline"});
-                $("#show-graph").css({display: "none"});
-
                 var result = data.split(",");
                 __lastReceivedData__ = result;
                 status.text(result.length + " results (" + msElapsed / 1000 + " seconds)");
-                
+
                 // Exibe a lista de resultados
                 var ul = $("<ul class='list-group'></ul>");
-                
+
                 for (var i = 0; i < result.length; i++)
                 {
                     var li = $("<li class='list-group-item'></li>");
@@ -151,24 +176,24 @@ var ATPIN = {};
                     li.append("<span class='more glyphicon glyphicon-chevron-down' onclick='ATPIN.showDetails(" + i + ")'></span>");
                     li.append("<br>");
                     li.append("<div class='target'></div>");
-                    
+
                     ul.append(li);
                 }
 
                 out.append(ul);
-            } 
-            
+            }
+
             // Se for 204 (NoContent), mostra um status de proteína não encontrada
             else if (xhr.status == 204) {
-                
+
                 status.text("The given protein could not be found on the database");
 
                 if (sessionStorage.disableHint == "true") {
-                    
+
                     $("#hint").css({
                         display: "block"
                     });
-                    
+
                     $("body").css({
                         paddingBottom: "60px"
                     });
@@ -182,7 +207,7 @@ var ATPIN = {};
                 }
             }
         }
-        
+
         requestLocus(locus, success, defaultError);
     };
 
@@ -191,33 +216,40 @@ var ATPIN = {};
     // forma de tabela
     //
     module.searchTwo = function() {
-        
+
         var out     = $("#result"),
             status  = $("#status"),
             input1  = $("#proteina"),
             input2  = $("#proteina2");
 
         out.text("");
-        
+
         // Formata e valida as duas entradas
         var a = input1.val().toUpperCase().trim();
         input1.val(a);
 
         var b = input2.val().toUpperCase().trim();
         input2.val(b);
-        
+
         if (!(input1[0].checkValidity() && input2[0].checkValidity())) {
             out.text("");
             status.text("Protein name can't be empty nor have white spaces");
             return;
         }
-    
+
+				addToHistory("2" + a + "," + b);
+
+				$("#expand-collapse").css({display: "block"});
+				$("#expand-all").css({display: "none"});
+				$("#collapse-all").css({display: "none"});
+				$("#clear-history").css({display: "none"});
+
         status.text("Searching...");
 
         var startTime = new Date().getTime();
 
         __lastSearched__ = [a, b];
-    
+
         // Objetos para armazenar as interações dos dois locus
         var dA = { locus: a };
         var dB = { locus: b, other: dA };
@@ -232,7 +264,7 @@ var ATPIN = {};
                 status.text(this.locus + " could not be found on the database");
                 return;
             }
-            
+
             this.interactions = data.split(",");
 
             if (other.interactions != undefined)
@@ -240,10 +272,6 @@ var ATPIN = {};
                 __lastReceivedData__ = { a: this, b: other };
 
                 var msElapsed = new Date().getTime() - startTime;
-                
-                $("#expand-collapse").css({display: "block"});
-                $("#expand-all").css({display: "none"});
-                $("#collapse-all").css({display: "none"});
 
                 $("#show-graph").css({display: "inline"});
                 $("#show-graph").html("<a href='#' onclick='ATPIN.showGraph()'>Show Graph</a>");
@@ -256,21 +284,21 @@ var ATPIN = {};
                     all.push(this.interactions[i]);
 
                 for (var i = 0; i < other.interactions.length; i++)
-                    if (all.indexOf(other.interactions[i]) < 0) 
+                    if (all.indexOf(other.interactions[i]) < 0)
                         all.push(other.interactions[i]);
 
                 // Mostra a tabela com os resultados
                 var table = $("<table class='table table-responsive'></table>"),
                     thead = $("<thead></thead>"),
                     tbody = $("<tbody></tbody>");
-                
+
                 var headRow = $("<tr></tr>");
                 headRow.append("<th></th>");
                 headRow.append("<th>" + this.locus + "</th>");
                 headRow.append("<th>" + other.locus + "</th>");
-                
+
                 thead.append(headRow);
-                
+
                 table.append(thead);
 
                 for (var i = 0; i < all.length; i++)
@@ -279,34 +307,34 @@ var ATPIN = {};
                     var interactsWithOther = other.interactions.indexOf(all[i]) >= 0;
 
                     var row;
-                    
+
                     // Se uma interage com a outra, mostra a linha em azul
                     if (
-                        (all[i] == this.locus && interactsWithOther) || 
+                        (all[i] == this.locus && interactsWithOther) ||
                         (all[i] == other.locus && interactsWithThis)
                     )
                         row = $("<tr class='info'></tr>");
-                    
+
                     // Se uma delas interage com ela mesma, mostra em amarelo
                     else if (
-                        (all[i] == this.locus && interactsWithThis) || 
+                        (all[i] == this.locus && interactsWithThis) ||
                         (all[i] == other.locus && interactsWithOther)
                     )
                         row = $("<tr class='warning'></tr>");
-                    
+
                     // Se uma terceira proteína interage com as duas procuradas, mostra
                     // em verde
                     else if (interactsWithThis && interactsWithOther)
                         row = $("<tr class='success'></tr>");
-                    
+
                     // Se só interagir com uma das duas, mostra a linha normalmente
                     else
                         row = $("<tr></tr>");
-                    
+
                     row.append("<th>" + all[i] + "</th>");
                     row.append("<td><span class='glyphicon " + (interactsWithThis ? "glyphicon-ok" : "glyphicon-remove") + "'></span></td>");
                     row.append("<td><span class='glyphicon " + (interactsWithOther ? "glyphicon-ok" : "glyphicon-remove") + "'></span></td>");
-                    
+
                     tbody.append(row);
                 }
 
@@ -332,7 +360,7 @@ var ATPIN = {};
         if (!div.is(":visible")) {
             if (div.text() == "")
                 requestInfo(__lastSearched__, item.text(), function(data, textStatus, xhr) {
-                    
+
                     // Se o código de retorno foi 200 (OK), mostra as informações
                     if (xhr.status == 200)
                     {
@@ -340,20 +368,20 @@ var ATPIN = {};
                         var table = $("<table class='table table-responsive'></table>"),
                             thead = $("<thead></thead>"),
                             tbody = $("<tbody></tbody>");
-                        
+
                         var headerRow = $("<tr></tr>");
                         headerRow.append("<th>Method</th>");
                         headerRow.append("<th>FSW</th>");
                         headerRow.append("<th>C3</th>");
                         headerRow.append("<th>Description</th>");
-                        
+
                         thead.append(headerRow);
                         table.append(thead);
-                        
+
                         var bodyRow     = $("<tr></tr>"),
                             methodCol   = $("<td></td>"),
                             methodList  = $("<ul></ul>");
-                        
+
                         for (var i = 0; i < info.method.length; i++)
                             methodList.append("<li>" + info.method[i] + "</li>");
                         methodCol.append(methodList);
@@ -362,20 +390,20 @@ var ATPIN = {};
                         bodyRow.append("<td>" + info.fsw + "</td>");
                         bodyRow.append("<td>" + info.local + "</td>");
                         bodyRow.append("<td>" + info.description.toUpperCase() + "</td>");
-                        
+
                         tbody.append(bodyRow);
                         table.append(tbody);
 
                         div.append(table);
-                        
-                    } 
-                    
+
+                    }
+
                     // Se não, Houston we have a problem
                     else {
                         div.append("<span class='error text-danger'>There's nothing about this interaction on the database.</span><br>");
                         div.append("That might be a bug, contact a system administrator for further information.");
                     }
-                    
+
                 }, defaultError);
 
             div.removeClass("collapsed").addClass("expanded")
@@ -385,7 +413,7 @@ var ATPIN = {};
             div.removeClass("expanded").addClass("collapsed");
         }
     };
-    
+
     //
     // Mostra as informações de todas as interações
     //
@@ -402,13 +430,13 @@ var ATPIN = {};
         $(".result-item").parent().find(".target").removeClass("expanded").addClass("collapsed");
         $(".more").removeClass("rotated").addClass("unrotated");
     };
-    
+
     //
     // Fecha a janela de dica de proteína
     //
     module.closeHint = function() {
         sessionStorage.disableHint = true;
-        $("body").css({paddingBottom: "0px"});
+        $("body").css({ paddingBottom: "0px" });
     };
 
     //
@@ -421,7 +449,7 @@ var ATPIN = {};
         out.text("");
         status.text("");
 
-        var svg = $("<svg id='graph' width='960' height='640'></svg>"); 
+        var svg = $("<svg id='graph' width='960' height='640'></svg>");
         out.append(svg);
 
         __graph__ = new ATPIN.Graph(svg);
@@ -448,7 +476,7 @@ var ATPIN = {};
         for (var i = 0; i < b.interactions.length; i++)
         {
             var p = b.interactions[i];
-            
+
             if (p == b.locus || p == a.locus)
                 continue;
 
@@ -493,13 +521,73 @@ var ATPIN = {};
         $("#show-graph").html("<a href='#' onclick='ATPIN.searchTwo()'>Show Table</a>");
     };
 
+		//
+		// Mostra o histórico de busca
+		//
+		module.showHistory = function() {
+			var out = $("#result"),
+					status  = $("#status");
+
+			out.text("");
+			status.text("");
+
+			$("#expand-collapse").css({display: "block"});
+			$("#expand-all").css({display: "none"});
+			$("#collapse-all").css({display: "none"});
+			$("#show-graph").css({display: "none"});
+			$("#clear-history").css({display: "inline"});
+
+			if (!window.localStorage)
+			{
+				status.text("Search history is not available on your browser, try enabling cookies and/or updating your browser.");
+				return;
+			}
+
+			if (!window.localStorage.history)
+			{
+				status.html("<center>Nothing here, try searching for something!</center>");
+				return;
+			}
+
+			var ul = $("<ul class='list-group'></ul>");
+
+			var entries = window.localStorage.history.split("\0");
+			for (var i = entries.length - 1; i >= 0; i--)
+			{
+				var li = $("<li class='list-group-item'></li>");
+				var entry = entries[i];
+
+				if (entry[0] == 'S')
+					li.append("<a href='?locus=" + entry.substring(1) + "' class='result-item'>" + entry.substring(1) + "</a>");
+				else if (entry[0] == '2')
+				{
+					var parts = entry.substring(1).split(',');
+					li.append("<a href='?locus=" + parts[0] + "&other=" + parts[1] + "' class='result-item'>" + parts[0] + " - " + parts[1] + "</a>");
+				}
+				else
+					continue;
+
+				ul.append(li);
+			}
+
+			out.append(ul);
+		}
+
+		//
+		// Limpa o histórico de busca
+		//
+		module.clearHistory = function() {
+			window.localStorage.history = "";
+			module.showHistory();
+		}
+
     //
     // Controlador para zoom com a roda do mouse
     //
     function mouseWheelHandler(e) {
         var evt = window.event || e;
         var scroll = evt.detail ? evt.detail * 0.05 : (evt.wheelDelta / 120) * 0.05;
-        
+
         if ((scroll < 0 && __graph__.scale < 0.1) || (scroll > 0 && __graph__.scale > 4.0))
             return;
 
@@ -524,12 +612,12 @@ var ATPIN = {};
         else
             input.parent().removeClass("has-error");
 
-        if (locus == "") 
+        if (locus == "")
         {
             submit.attr("disabled", true);
             more.attr("disabled", true);
         }
-        else 
+        else
         {
             submit.removeAttr("disabled");
             more.removeAttr("disabled");
@@ -575,7 +663,7 @@ var ATPIN = {};
                 other = decodeURIComponent(pair[1]);
         }
 
-        if (!!locus) 
+        if (!!locus)
         {
             if (!!other)
             {
@@ -592,7 +680,7 @@ var ATPIN = {};
                 module.searchSingle();
             }
         }
-        
+
         // Mostra a janela de dica
         if (sessionStorage.disableHint != "true")
         {
