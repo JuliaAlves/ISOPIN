@@ -340,7 +340,10 @@ var ATPIN = {};
 
                 table.append(tbody);
 
-                out.append(table);
+                var b = $("<ul class='list-group'></ul>"), c = $("<li class='list-group-item'></li>");
+                b.append(c);
+                c.append(table);
+                out.append(b);
                 status.text(all.length + " results (" + msElapsed / 1000 + " seconds)");
             }
         }
@@ -449,7 +452,7 @@ var ATPIN = {};
         out.text("");
         status.text("");
 
-        var svg = $("<svg id='graph' width='960' height='640'></svg>");
+        var svg = $("<svg style='background-color: #fff' id='graph' width='960' height='640'></svg>");
         out.append(svg);
 
         __graph__ = new ATPIN.Graph(svg);

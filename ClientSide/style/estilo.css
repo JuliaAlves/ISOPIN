@@ -1,10 +1,18 @@
+body {
+    background-color: #fffec8
+}
+
+#logo {
+  width: auto;
+  max-height: 100%;
+}
+
 #menu {
     top: 0px;
     left: 0px;
     text-align: center;
     width: 100%;
-    /* height: 60px; */
-    background-color: yellowgreen;
+    background-color: #7a9d02;
 }
 
 #expand-collapse {
