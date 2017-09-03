@@ -1,6 +1,7 @@
 ﻿using ATPIN.Properties;
 
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
@@ -31,19 +32,33 @@ namespace ATPIN
 
             // Inicializa o servidor Http na porta configurada
             listener = new HttpListener();
+
             listener.Prefixes.Add(string.Format("http://*:{0}/", Settings.Default.Port));
 
             try
             {
                 listener.Start();
+
+                Log("Servidor HTTP inicializado com sucesso em http://*:/{0}/", Settings.Default.Port);
             }
             catch (Exception e)
             {
-                Log("Falha ao inicializar o servidor: {0}", e.Message);
-                return null;
-            }
+                listener = new HttpListener();
+                listener.Prefixes.Add(string.Format("http://localhost:{0}/", Settings.Default.Port));
 
-            Log("Servidor HTTP inicializado com sucesso na porta {0}", Settings.Default.Port);
+                Log("Falha ao inicializar o servidor em http://*:/{0}/: {1}. O servidor será inicializado localmente", Settings.Default.Port, e.Message);
+
+                try
+                {
+                    listener.Start();
+                    Log("Servidor HTTP inicializado com sucesso em http://localhost:{0}/", Settings.Default.Port);
+                }
+                catch
+                {
+                    Log("Falha ao inicializar o servidor localmente: {0}", e.Message);
+                    return null;
+                }
+            }
 
             // Roda uma thread que responde as requisições feitas ao servidor
             return RespondRequestsAsync();
