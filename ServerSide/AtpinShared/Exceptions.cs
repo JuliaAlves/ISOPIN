@@ -13,6 +13,11 @@ namespace ATPIN
     public class InfoForInteractomeNotFoundException : Exception { }
 
     /// <summary>
+    /// Exceção para quando nenhum resultado é encontrado para uma busca
+    /// </summary>
+    public class NoResultsException : Exception { }
+
+    /// <summary>
     /// Exceção disparada quando uma requisição é determinada inválida
     /// </summary>
     public class BadRequestException : Exception {

@@ -5,7 +5,8 @@ var ATPIN = {};
     var __server__,
         __lastSearched__,
         __lastReceivedData__,
-        __graph__;
+        __graph__,
+        __pageChanged__;
 
     //
     // Envia uma requisição para o servidor
@@ -65,8 +66,79 @@ var ATPIN = {};
     //
     //  locus       : Proteína a ser requisitada
     //
-    function requestLocus(locus, onsuccess, onerror) {
-        sendRequest("LOCUS " + locus, onsuccess, onerror);
+    function requestLocus(locus, page, onsuccess, onerror) {
+        sendRequest("LOCUS " + page + " " + locus, onsuccess, onerror);
+    }
+
+    //
+    // Requisita o número de páginas para uma pesquisa para o servidor
+    //
+    //  method  : Método de pesquisa
+    //  param   : Parâmetro da pesquisa
+    //
+    function requestNumberOfPages(method, param, onsuccess, onerror) {
+        sendRequest(method + " PageCount " + param, onsuccess, onerror);
+    }
+
+    //
+    // Requisita uma lista das proteínas cujas descrições batem com uma
+    // pesquisa
+    //
+    //  desc       : Descrição a ser pesquisada
+    //  page       : Página
+    //
+    function requestSearchByDescription(desc, page, onsuccess, onerror){
+        sendRequest("QDESC " + page + " " + desc, onsuccess, onerror);
+    }
+
+    //
+    // Requisita uma lista das interações cujos C3 coincidam com uma pesquisa
+    //
+    //  c3          : C3 a ser pesquisado
+    //  page        : Página
+    //
+    function requestSearchByC3(c3, page, onsuccess, onerror){
+        sendRequest("QC3 " + page + " " + c3, onsuccess, onerror);
+    }
+
+    //
+    // Requisita uma lista das interações cujos métodos de previsão batam com
+    // uma pesquisa
+    //
+    //  method        : Método a ser pesquisado
+    //  page          : Página
+    //
+    function requestSearchByMethod(method, page, onsuccess, onerror){
+        sendRequest("QM " + page + " " + method, onsuccess, onerror);
+    }
+
+    //
+    // Requisita a descrição de uma proteína
+    //
+    //  locus       : Proteína
+    //
+    function requestDescription(locus, onsuccess, onerror){
+        sendRequest("DESC " + locus, onsuccess, onerror);
+    }
+
+    //
+    // Requisita o C3 de uma interação
+    //
+    //  locusA      : Proteína A
+    //  locusB      : Proteína B
+    //
+    function requestC3(locusA, locusB, onsuccess, onerror){
+        sendRequest("C3 " + locusA + " " + locusB, onsuccess, onerror);
+    }
+
+    //
+    // Requisita o método de previsão de uma interação
+    //
+    //  locusA      : Proteína A
+    //  locusB      : Proteína B
+    //
+    function requestMethod(locusA, locusB, onsuccess, onerror){
+        sendRequest("M " + locusA + " " + locusB, onsuccess, onerror);
     }
 
     //
@@ -86,61 +158,321 @@ var ATPIN = {};
         sendRequest("RANDOM", onsuccess, onerror);
     }
 
-		//
-		// Adiciona uma busca ao histórico
-		//
-		function addToHistory(query)
-		{
-			if (!window.localStorage)
-				return;
+	//
+	// Adiciona uma busca ao histórico
+	//
+	function addToHistory(query) {
+		if (!window.localStorage)
+			return;
 
-			if (window.localStorage.history === undefined)
-				window.localStorage.history = "";
+		if (window.localStorage.history === undefined)
+			window.localStorage.history = "";
 
-			entries = window.localStorage.history.split("\0");
+		entries = window.localStorage.history.split("\0");
 
-			var i = entries.indexOf(query);
-			if (i >= 0)
-				entries.splice(i, 1);
+		var i = entries.indexOf(query);
+		if (i >= 0)
+			entries.splice(i, 1);
 
-			entries.push(query);
+		entries.push(query);
 
-			window.localStorage.history = entries.join("\0");
-		}
+		window.localStorage.history = entries.join("\0");
+    }
+
+    //
+    // Habilita uma opção
+    //
+    function enableOptions() {
+        for (var i = 0; i < arguments.length; i++)
+            $("#" + arguments[i]).css({display: "block"});  
+    }
+
+    //
+    // Habilita uma opção
+    //
+    function enableOptionsInline() {
+        for (var i = 0; i < arguments.length; i++)
+            $("#" + arguments[i]).css({display: "inline"});  
+    }
+
+    //
+    // Habilita uma opção
+    //
+    function disableOptions() {
+        for (var i = 0; i < arguments.length; i++)
+            $("#" + arguments[i]).css({display: "none"});  
+    }
+
+    //
+    // Deixa tudo pronto para começar uma pesquisa
+    //
+    module.setupSearch = function(page) {
+    	disableOptions(
+            "expand-all", "collapse-all", "show-graph", 
+            "clear-history", "pages"
+        );
+
+        $("#result").text("");
+        $("#status").text("Searching...");
+
+        $("#pages")[0].selectedIndex = page - 1;
+    }
+
+    //
+    // Executa uma pesquisa pelo campo selecionado na barra de busca
+    //
+    module.search = function() {
+        var opt = $("#select"), input = $("#search").val();
+
+        switch (opt[0].selectedIndex)
+        {
+            default:
+                module.searchByName(input);
+                break;
+
+            case 2:
+                module.searchByDescription(input);
+                break;
+
+            case 3:
+                module.searchByMethod(input);
+                break;
+
+            case 4:
+                module.searchByC3(input);
+                break;
+        }
+    };
+
+    //
+   	// Mostra as páginas
+   	//
+    function showPages(n)
+    {
+    	$("#pages").empty();
+        var pageCount = parseInt(n);
+        for (var i = 1; i <= n; i++)
+        	$("#pages").append("<option value='" + i + "'>" + i + "</option>");
+    }
+
+    //
+    // Evento de alteração de página
+    //
+    function pageChanged() {
+    	if (__pageChanged__)
+    		__pageChanged__(parseInt($("#pages").val()));
+    };
+
+    //
+    // Procura as proteínas que tenham descrições que batam com a pesquisada
+    //
+    module.searchByDescription = function(description, page) {
+        module.setupSearch(page);
+
+        var out  = $("#result"),
+            status  = $("#status");
+
+        addToHistory("D" + description);
+        enableOptions("pages");
+
+    	if (!page)
+        {
+	        requestNumberOfPages("QDESC", description, showPages, defaultError);
+	        __pageChanged__ = function(p) { module.searchByDescription(description, p); };
+	    }
+
+        var startTime = new Date().getTime();
+        requestSearchByDescription(description, page || 1, function(data, textStatus, xhr) {
+            out.text("");
+
+            // Se o código de sucesso for 200 (OK), mostra o resultado na tela
+            if (xhr.status == 200) {
+
+                if (data == undefined) {
+                    status.text("No protein matches the description you are looking for.");
+                    return;
+                }
+
+                var result = data.split(",");
+
+                // Exibe a lista de resultados
+                var ul = $("<ul class='list-group'></ul>");
+                out.append(ul);
+
+                for (var i = 0; i < result.length; i++)
+                {
+                    var li = $("<li class='list-group-item'></li>");
+                    li.append("<a href='#' onclick='ATPIN.searchByName(\"" + result[i] + "\")' class='result-item'>" + result[i] + "</a>");
+                    li.append("<br><br>");
+
+                    (function(desc) {
+                        li.append(desc);
+
+                        requestDescription(result[i],
+                            function(data) {
+                                var index = data.search(new RegExp(description, "gi"));
+                                desc.text(data.substring(0, index));
+                                desc.append("<mark>" + data.substring(index, index + description.length) + "</mark>");
+                                desc.append(data.substring(index + description.length));
+                            },
+
+                            function() {
+                                desc.text("Failed to fetch protein description from server")
+                            }
+                        );
+                    })($("<span><span class='text-muted'>Loading...</span></span>"));
+
+                    ul.append(li);
+                }
+
+                var msElapsed = new Date().getTime() - startTime;
+                status.text(result.length + " results (" + msElapsed / 1000 + " seconds)");
+            }
+
+            // Se for 204 (NoContent), mostra um status de proteína não encontrada
+            else if (xhr.status == 204)
+                status.text("No protein matches the description you are looking for.");
+
+        }, defaultError);
+    };
+
+    //
+    // Procura as interações que tenham sido preditas pelo método pesquisado
+    //
+    module.searchByMethod = function(method, page) {
+        module.setupSearch(page);
+
+        var out  = $("#result"),
+            status  = $("#status");
+
+        addToHistory("M" + method);
+        enableOptions("pages");
+
+        if (!page)
+        {
+	        requestNumberOfPages("QM", method, showPages, defaultError);
+	        __pageChanged__ = function(p) { module.searchByMethod(method, p); };
+	    }
+
+        var startTime = new Date().getTime();
+
+        requestSearchByMethod(method, page || 1, function(data, textStatus, xhr) {
+
+            var msElapsed = new Date().getTime() - startTime;
+
+            out.text("");
+
+            // Se o código de sucesso for 200 (OK), mostra o resultado na tela
+            if (xhr.status == 200) {
+
+                if (data == undefined) {
+                    status.text("No matches were found on the database for the given method.");
+                    return;
+                }
+
+                var result = data.split(",");
+                __lastReceivedData__ = result;
+                status.text(result.length + " results (" + msElapsed / 1000 + " seconds)");
+
+                // Exibe a lista de resultados
+                var ul = $("<ul class='list-group'></ul>");
+
+                for (var i = 0; i < result.length; i++)
+                {
+                    var li = $("<li class='list-group-item'></li>");
+					var parts = result[i].split(':');
+                    li.append("<a href='#' onclick='ATPIN.searchByName(\"" + parts[0] + "\")' class='result-item'>" + parts[0] + "</a>");
+					li.append("<span class='text-muted'> | </span>");
+					li.append("<a href='#' onclick='ATPIN.searchByName(\"" + parts[1] + "\")' class='result-item'>" + parts[1] + "</a>");
+                    li.append("<br>");
+
+                    (function(m) {
+                        li.append(m);
+
+                        requestMethod(parts[0], parts[1],
+                            function(data) {
+								data = data.replace(/\|/g, '<br>');
+                                var index = data.search(new RegExp(method, "gi"));
+                                m.html(data.substring(0, index));
+                                m.append("<mark>" + data.substring(index, index + method.length) + "</mark>");
+                                m.append(data.substring(index + method.length));
+                            },
+
+                            function() {
+                                m.text("Failed to fetch interaction prediction method from server")
+                            }
+                        );
+                    })($("<span>Loading...</span>"));
+
+                    ul.append(li);
+                }
+
+                out.append(ul);
+            }
+
+            // Se for 204 (NoContent), mostra um status de proteína não encontrada
+            else if (xhr.status == 204) {
+
+                status.text("No protein matches the description you are looking for.");
+
+                if (sessionStorage.disableHint == "true") {
+
+                    $("#hint").css({
+                        display: "block"
+                    });
+
+                    $("body").css({
+                        paddingBottom: "60px"
+                    });
+
+                    requestRandom(function(data) {
+                        $("#hint-locus").text(data);
+                        $("#hint-locus").attr("href", "?locus=" + data);
+                    });
+
+                    sessionStorage.disableHint = false;
+                }
+            }
+        }, defaultError);
+    };
+
+    //
+    // Procura as interações cujo C3 seja semelhante ao pesquisado
+    //
+    module.searchByC3 = function(c3, page) {
+        module.setupSearch(page);
+
+        if (!page)
+        {
+	        requestNumberOfPages("QC3", c3, showPages, defaultError);
+	        __pageChanged__ = function(p) { module.searchByC3(c3, p); };
+	    }
+    };
 
     //
     // Procura um locus no banco de dados e mostra a lista de proteínas
     // que interagem com ele
     //
-    module.searchSingle = function() {
+    module.searchByName = function(locus, page) {
+        module.setupSearch(page);
+
         var out     = $("#result"),
-            status  = $("#status"),
-            input   = $("#proteina");
+            status  = $("#status");
 
-        out.text("");
+        locus = locus.toUpperCase().trim();
 
-        // Formata a entrada
-        var locus = input.val().toUpperCase().trim();
-        input.val(locus);
-
-        // Valida a entrada, se estiver fora do padrão estabelecido
-        // cancela a pesquisa e retorna erro
-        if (!input[0].checkValidity()) {
-            out.text("");
-            status.text("Protein name can't be empty nor have white spaces");
-            return;
-        }
-
-				addToHistory("S" + locus);
+		addToHistory("S" + locus);
 
         __lastSearched__ = locus;
 
-        status.text("Searching...");
+        enableOptionsInline("expand-all", "collapse-all");
+        enableOptions("pages");
 
-				$("#expand-all").css({display: "inline"});
-				$("#collapse-all").css({display: "inline"});
-				$("#show-graph").css({display: "none"});
-				$("#clear-history").css({display: "none"});
+        if (!page)
+        {
+        	requestNumberOfPages("LOCUS", locus, showPages, defaultError);
+	        __pageChanged__ = function(p) { module.searchByName(locus, p); };
+	    }
 
         var startTime = new Date().getTime();
 
@@ -149,7 +481,6 @@ var ATPIN = {};
             var msElapsed = new Date().getTime() - startTime;
 
             out.text("");
-            $("#expand-collapse").css({display: "none"});
 
             // Se o código de sucesso for 200 (OK), mostra o resultado na tela
             if (xhr.status == 200) {
@@ -159,7 +490,7 @@ var ATPIN = {};
                     return;
                 }
 
-                $("#expand-collapse").css({display: "block"});
+                enableOptions("expand-collapse");
 
                 var result = data.split(",");
                 __lastReceivedData__ = result;
@@ -172,7 +503,7 @@ var ATPIN = {};
                 {
                     var li = $("<li class='list-group-item'></li>");
                     li.append("<a class='glyphicon glyphicon-transfer search-pair' href='?locus=" + locus + "&other=" + result[i] + "'></a>");
-                    li.append("<a href='?locus=" + result[i] + "' class='result-item'>" + result[i] + "</a>");
+                    li.append("<a href='#' onclick='ATPIN.searchByName(\"" + result[i] + "\")' class='result-item'>" + result[i] + "</a>");
                     li.append("<span class='more glyphicon glyphicon-chevron-down' onclick='ATPIN.showDetails(" + i + ")'></span>");
                     li.append("<br>");
                     li.append("<div class='target'></div>");
@@ -208,43 +539,19 @@ var ATPIN = {};
             }
         }
 
-        requestLocus(locus, success, defaultError);
+        requestLocus(locus, page || 1, success, defaultError);
     };
 
     //
     // Procura as interações para dois locus e mostra o resultado na
     // forma de tabela
     //
-    module.searchTwo = function() {
-
+    module.searchTwo = function(a, b) {
         var out     = $("#result"),
-            status  = $("#status"),
-            input1  = $("#proteina"),
-            input2  = $("#proteina2");
+            status  = $("#status");
 
-        out.text("");
-
-        // Formata e valida as duas entradas
-        var a = input1.val().toUpperCase().trim();
-        input1.val(a);
-
-        var b = input2.val().toUpperCase().trim();
-        input2.val(b);
-
-        if (!(input1[0].checkValidity() && input2[0].checkValidity())) {
-            out.text("");
-            status.text("Protein name can't be empty nor have white spaces");
-            return;
-        }
-
-				addToHistory("2" + a + "," + b);
-
-				$("#expand-collapse").css({display: "block"});
-				$("#expand-all").css({display: "none"});
-				$("#collapse-all").css({display: "none"});
-				$("#clear-history").css({display: "none"});
-
-        status.text("Searching...");
+		addToHistory("2" + a + "," + b);
+        enableOptions("expand-collapse");
 
         var startTime = new Date().getTime();
 
@@ -524,65 +831,69 @@ var ATPIN = {};
         $("#show-graph").html("<a href='#' onclick='ATPIN.searchTwo()'>Show Table</a>");
     };
 
-		//
-		// Mostra o histórico de busca
-		//
-		module.showHistory = function() {
-			var out = $("#result"),
-					status  = $("#status");
+	//
+	// Mostra o histórico de busca
+	//
+	module.showHistory = function() {
+		var out = $("#result"),
+				status  = $("#status");
 
-			out.text("");
-			status.text("");
+		out.text("");
+		status.text("");
 
-			$("#expand-collapse").css({display: "block"});
-			$("#expand-all").css({display: "none"});
-			$("#collapse-all").css({display: "none"});
-			$("#show-graph").css({display: "none"});
-			$("#clear-history").css({display: "inline"});
+        enableOptions("expand-collapse");
+        enableOptionsInline("clear-history");
+        disableOptions("expand-all", "collapse-all", "show-graph");
 
-			if (!window.localStorage)
-			{
-				status.text("Search history is not available on your browser, try enabling cookies and/or updating your browser.");
-				return;
-			}
-
-			if (!window.localStorage.history)
-			{
-				status.html("<center>Nothing here, try searching for something!</center>");
-				return;
-			}
-
-			var ul = $("<ul class='list-group'></ul>");
-
-			var entries = window.localStorage.history.split("\0");
-			for (var i = entries.length - 1; i >= 0; i--)
-			{
-				var li = $("<li class='list-group-item'></li>");
-				var entry = entries[i];
-
-				if (entry[0] == 'S')
-					li.append("<a href='?locus=" + entry.substring(1) + "' class='result-item'>" + entry.substring(1) + "</a>");
-				else if (entry[0] == '2')
-				{
-					var parts = entry.substring(1).split(',');
-					li.append("<a href='?locus=" + parts[0] + "&other=" + parts[1] + "' class='result-item'>" + parts[0] + " - " + parts[1] + "</a>");
-				}
-				else
-					continue;
-
-				ul.append(li);
-			}
-
-			out.append(ul);
+		if (!window.localStorage)
+		{
+			status.text("Search history is not available on your browser, try enabling cookies and/or updating your browser.");
+			return;
 		}
 
-		//
-		// Limpa o histórico de busca
-		//
-		module.clearHistory = function() {
-			window.localStorage.history = "";
-			module.showHistory();
+		if (!window.localStorage.history)
+		{
+			status.html("<center>Nothing here, try searching for something!</center>");
+			return;
 		}
+
+		var ul = $("<ul class='list-group'></ul>");
+
+		var entries = window.localStorage.history.split("\0");
+		for (var i = entries.length - 1; i >= 0; i--)
+		{
+			var li = $("<li class='list-group-item'></li>");
+			var entry = entries[i];
+
+			if (entry[0] == 'S')
+				li.append("<tr><td style='width: 100%'><a href='#' onclick='ATPIN.searchByName(\"" + entry.substring(1) + "\")' class='result-item'>" + entry.substring(1) + "</a></td><td class='text-muted text-right'>Name</td></tr>");
+			else if (entry[0] == '2')
+			{
+				var parts = entry.substring(1).split(',');
+				li.append("<tr><td style='width: 100%'><a href='#' onclick='ATPIN.searchTwo(\"" + parts[0] + "\", \"" + parts[1] + "\")' class='result-item'>" + parts[0] + " - " + parts[1] + "</a></td><td class='text-muted text-right'>Pair</td></tr>");
+			}
+            else if (entry[0] == 'D')
+                li.append("<tr><td style='width: 100%'><a href='#' onclick='ATPIN.searchByDescription(\"" + entry.substring(1) + "\")' class='result-item'>" + entry.substring(1) + "</a></td><td class='text-muted text-right'>Description</td></tr>");
+            else if (entry[0] == 'M')
+                li.append("<tr><td style='width: 100%'><a href='#' onclick='ATPIN.searchByMethod(\"" + entry.substring(1) + "\")' class='result-item'>" + entry.substring(1) + "</a></td><td class='text-muted text-right'>Method</td></tr>");
+            else if (entry[0] == 'C')
+                li.append("<tr><td style='width: 100%'><a href='#' onclick='ATPIN.searchByC3(\"" + entry.substring(1) + "\")' class='result-item'>" + entry.substring(1) + "</a></td><td class='text-muted text-right'>C3</td></tr>");
+			else
+				continue;
+
+			ul.append(li);
+		}
+
+		out.append(ul);
+	}
+
+	//
+	// Limpa o histórico de busca
+	//
+	module.clearHistory = function() {
+		window.localStorage.history = "";
+		module.showHistory();
+	}
 
     //
     // Controlador para zoom com a roda do mouse
@@ -605,9 +916,10 @@ var ATPIN = {};
     // Evento de edição do input de pesquisa
     //
     function pesquisaEdited() {
-        var input = $("#proteina");
-        var submit = $("#submit");
-        var more= $("#moreLocus");
+        var input = $("#search"),
+            submit = $("#submit"),
+            more = $("#moreLocus");
+
         var locus = input.val().trim();
 
         if (!input[0].checkValidity())
@@ -628,61 +940,13 @@ var ATPIN = {};
     }
 
     //
-    // Evento de edição do input de pesquisa da segunda proteína
-    //
-    function pesquisa2Edited() {
-        var input = $("#proteina2");
-        var submit = $("#submit2");
-        var locus = input.val().trim();
-
-        if (!input[0].checkValidity())
-            input.parent().addClass("has-error");
-        else
-            input.parent().removeClass("has-error");
-
-        if (locus == "")
-            submit.attr("disabled", true);
-        else
-            submit.removeAttr("disabled");
-    }
-
-    //
     // Evento de carregamento finalizado no documento
     //
     $(document).ready(function() {
-        $("#proteina").on('input', pesquisaEdited);
-        $("#proteina2").on('input', pesquisa2Edited);
+        var input = $("#search");
 
-        // Procura um locus usando a query string da URL
-        var locus, other;
-
-        var query = window.location.search.substring(1);
-        var vars = query.split('&');
-        for (var i = 0; i < vars.length; i++) {
-            var pair = vars[i].split('=');
-            if (decodeURIComponent(pair[0]) == 'locus')
-                locus = decodeURIComponent(pair[1]);
-            else if (decodeURIComponent(pair[0]) == 'other')
-                other = decodeURIComponent(pair[1]);
-        }
-
-        if (!!locus)
-        {
-            if (!!other)
-            {
-                $("#proteina").val(locus);
-                $("#proteina2").val(other);
-                pesquisaEdited();
-                pesquisa2Edited();
-                module.searchTwo();
-            }
-            else
-            {
-                $("#proteina").val(locus);
-                pesquisaEdited();
-                module.searchSingle();
-            }
-        }
+        input.on('input', pesquisaEdited);
+        $("#pages").on('change', pageChanged);
 
         // Mostra a janela de dica
         if (sessionStorage.disableHint != "true")
@@ -692,7 +956,7 @@ var ATPIN = {};
 
             requestRandom(function(data) {
                 $("#hint-locus").text(data);
-                $("#hint-locus").attr("href", "?locus=" + data);
+                $("#hint-locus").attr("onclick", "ATPIN.searchByName(\"" + data + "\")");
             });
         }
     });

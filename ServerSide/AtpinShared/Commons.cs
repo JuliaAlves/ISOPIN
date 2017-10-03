@@ -160,7 +160,7 @@ namespace ATPIN
                         request.Respond(db.GetRandom());
                         break;
 
-                    case Request.RequestMethod.Specific:
+                    case Request.RequestMethod.SearchByName:
 
                         if (string.IsNullOrEmpty(request.ProteinA))
                         {
@@ -173,10 +173,15 @@ namespace ATPIN
 
                         try
                         {
-                            string interactions = db.GetInteractionsForProtein(request.ProteinA);
+                            if (request.RequestingPageCount)
+                                request.Respond(db.GetPageCount((Database.SearchField)request.Method, request.ProteinA).ToString());
+                            else
+                            {
+                                string interactions = db.GetInteractionsForProtein(request.ProteinA, request.PageNumber);
 
-                            if (!string.IsNullOrWhiteSpace(interactions))
-                                request.Respond(interactions);
+                                if (!string.IsNullOrWhiteSpace(interactions))
+                                    request.Respond(interactions);
+                            }
                         }
                         catch (LocusNotFoundException)
                         {
@@ -205,6 +210,141 @@ namespace ATPIN
                             Log("Informações não encontradas para a requisição feita por {0}", request.RemoteEndPoint);
                             request.Respond("", HttpStatusCode.NoContent);
                         }
+                        break;
+
+                    case Request.RequestMethod.SearchByC3:
+                        if (string.IsNullOrEmpty(request.SearchQuery))
+                        {
+                            request.Respond("", HttpStatusCode.NoContent);
+                            db.Close();
+                            return;
+                        }
+
+                        Log("{0} fez uma pesquisa por `{1}' no campo C3", request.RemoteEndPoint, request.SearchQuery);
+
+                        try
+                        {
+                            if (request.RequestingPageCount)
+                                request.Respond(db.GetPageCount((Database.SearchField)request.Method, request.SearchQuery).ToString());
+                            else
+                                request.Respond(db.SearchByC3(request.SearchQuery, request.PageNumber));
+                        }
+                        catch (NoResultsException)
+                        {
+                            request.Respond("", HttpStatusCode.NoContent);
+                        }
+
+                        break;
+
+                    case Request.RequestMethod.SearchByDescription:
+                        if (string.IsNullOrEmpty(request.SearchQuery))
+                        {
+                            request.Respond("", HttpStatusCode.NoContent);
+                            db.Close();
+                            return;
+                        }
+
+                        Log("{0} fez uma pesquisa por `{1}' no campo Descrição", request.RemoteEndPoint, request.SearchQuery);
+
+                        try
+                        {
+                            if (request.RequestingPageCount)
+                                request.Respond(db.GetPageCount((Database.SearchField)request.Method, request.SearchQuery).ToString());
+                            else
+                                request.Respond(db.SearchByDescription(request.SearchQuery, request.PageNumber));
+                        }
+                        catch (NoResultsException)
+                        {
+                            request.Respond("", HttpStatusCode.NoContent);
+                        }
+
+                        break;
+
+                    case Request.RequestMethod.SearchByMethod:
+                        if (string.IsNullOrEmpty(request.SearchQuery))
+                        {
+                            request.Respond("", HttpStatusCode.NoContent);
+                            db.Close();
+                            return;
+                        }
+
+                        Log("{0} fez uma pesquisa por `{1}' no campo Descrição", request.RemoteEndPoint, request.SearchQuery);
+
+                        try
+                        {
+                            if (request.RequestingPageCount)
+                                request.Respond(db.GetPageCount((Database.SearchField)request.Method, request.SearchQuery).ToString());
+                            else
+                                request.Respond(db.SearchByMethod(request.SearchQuery, request.PageNumber));
+                        }
+                        catch (NoResultsException)
+                        {
+                            request.Respond("", HttpStatusCode.NoContent);
+                        }
+
+                        break;
+
+                    case Request.RequestMethod.QueryC3:
+                        if (string.IsNullOrEmpty(request.ProteinA) || string.IsNullOrEmpty(request.ProteinB))
+                        {
+                            request.Respond("", HttpStatusCode.NoContent);
+                            db.Close();
+                            return;
+                        }
+
+                        Log("{0} requisitou o C3 para `{1}'->`{2}'", request.RemoteEndPoint, request.ProteinA, request.ProteinB);
+
+                        try
+                        {
+                            request.Respond(db.GetC3(request.ProteinA, request.ProteinB));
+                        }
+                        catch (InfoForInteractomeNotFoundException)
+                        {
+                            request.Respond("", HttpStatusCode.NoContent);
+                        }
+
+                        break;
+
+                    case Request.RequestMethod.QueryDescription:
+                        if (string.IsNullOrEmpty(request.ProteinA))
+                        {
+                            request.Respond("", HttpStatusCode.NoContent);
+                            db.Close();
+                            return;
+                        }
+
+                        Log("{0} requisitou a descrição para `{1}'", request.RemoteEndPoint, request.ProteinA);
+
+                        try
+                        {
+                            request.Respond(db.GetDescription(request.ProteinA));
+                        }
+                        catch (InfoForInteractomeNotFoundException)
+                        {
+                            request.Respond("", HttpStatusCode.NoContent);
+                        }
+
+                        break;
+
+                    case Request.RequestMethod.QueryMethod:
+                        if (string.IsNullOrEmpty(request.ProteinA) || string.IsNullOrEmpty(request.ProteinB))
+                        {
+                            request.Respond("", HttpStatusCode.NoContent);
+                            db.Close();
+                            return;
+                        }
+
+                        Log("{0} requisitou o método para `{1}'->`{2}'", request.RemoteEndPoint, request.ProteinA, request.ProteinB);
+
+                        try
+                        {
+                            request.Respond(db.GetMethod(request.ProteinA, request.ProteinB));
+                        }
+                        catch (InfoForInteractomeNotFoundException)
+                        {
+                            request.Respond("", HttpStatusCode.NoContent);
+                        }
+
                         break;
                 }
 
