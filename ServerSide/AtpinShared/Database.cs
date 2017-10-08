@@ -175,8 +175,6 @@ namespace ATPIN
             string interactions = "",
                    query = "SELECT locusA, locusB FROM interactome WHERE locusA LIKE @0 or locusB LIKE @0 LIMIT @1, @2";
 
-            Debugger.Log(1, "", "P " + page);
-
             List<string> results = new List<string>();
 
             using (MySqlDataReader result = ExecuteQuery(query, prot, (page - 1) * PAGE_LIMIT, PAGE_LIMIT))
@@ -365,7 +363,7 @@ namespace ATPIN
                 if (!result.Read())
                     throw new InfoForInteractomeNotFoundException();
 
-                return result.GetString("local");
+                return result.GetString("predito");
             }
         }
 

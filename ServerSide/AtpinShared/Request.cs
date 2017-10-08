@@ -150,9 +150,6 @@ namespace ATPIN
                         PageNumber = uint.Parse(parts[1]);
 
                     SearchQuery = command.Substring(command.IndexOf(' ', command.IndexOf(' ') + 1) + 1);
-
-                    if (parts.Length > 2)
-                        throw new BadRequestException("Wrong number of arguments for method `QC3'");
                 }
                 else if (string.Compare("qdesc", parts[0], true) == 0)
                 {

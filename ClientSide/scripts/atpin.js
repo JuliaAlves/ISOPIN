@@ -227,18 +227,22 @@ var ATPIN = {};
         switch (opt[0].selectedIndex)
         {
             default:
+                window.history.pushState({}, "", "?t=0&prot=" + input);
                 module.searchByName(input);
                 break;
 
             case 2:
+                window.history.pushState({}, "", "?t=4&desc=" + input);
                 module.searchByDescription(input);
                 break;
 
             case 3:
+                window.history.pushState({}, "", "?t=1&m=" + input);
                 module.searchByMethod(input);
                 break;
 
             case 4:
+                window.history.pushState({}, "", "?t=3&c3=" + input);
                 module.searchByC3(input);
                 break;
         }
@@ -247,8 +251,7 @@ var ATPIN = {};
     //
    	// Mostra as páginas
    	//
-    function showPages(n)
-    {
+    function showPages(n) {
     	$("#pages").empty();
         var pageCount = parseInt(n);
         for (var i = 1; i <= n; i++)
@@ -259,8 +262,11 @@ var ATPIN = {};
     // Evento de alteração de página
     //
     function pageChanged() {
+        var p = parseInt($("#pages").val());
     	if (__pageChanged__)
-    		__pageChanged__(parseInt($("#pages").val()));
+    		__pageChanged__(p);
+
+        window.history.pushState({}, "", ('' + window.location).replace(/&p=\d+/g, '') + "&p=" + p);
     };
 
     //
@@ -273,7 +279,6 @@ var ATPIN = {};
             status  = $("#status");
 
         addToHistory("D" + description);
-        enableOptions("pages");
 
     	if (!page)
         {
@@ -283,6 +288,9 @@ var ATPIN = {};
 
         var startTime = new Date().getTime();
         requestSearchByDescription(description, page || 1, function(data, textStatus, xhr) {
+            var msElapsed = new Date().getTime() - startTime;
+            enableOptions("pages");
+
             out.text("");
 
             // Se o código de sucesso for 200 (OK), mostra o resultado na tela
@@ -302,7 +310,7 @@ var ATPIN = {};
                 for (var i = 0; i < result.length; i++)
                 {
                     var li = $("<li class='list-group-item'></li>");
-                    li.append("<a href='#' onclick='ATPIN.searchByName(\"" + result[i] + "\")' class='result-item'>" + result[i] + "</a>");
+                    li.append("<a href='?t=0&prot=" + result[i] + "' class='result-item'>" + result[i] + "</a>");
                     li.append("<br><br>");
 
                     (function(desc) {
@@ -325,7 +333,6 @@ var ATPIN = {};
                     ul.append(li);
                 }
 
-                var msElapsed = new Date().getTime() - startTime;
                 status.text(result.length + " results (" + msElapsed / 1000 + " seconds)");
             }
 
@@ -346,7 +353,6 @@ var ATPIN = {};
             status  = $("#status");
 
         addToHistory("M" + method);
-        enableOptions("pages");
 
         if (!page)
         {
@@ -355,10 +361,10 @@ var ATPIN = {};
 	    }
 
         var startTime = new Date().getTime();
-
         requestSearchByMethod(method, page || 1, function(data, textStatus, xhr) {
 
             var msElapsed = new Date().getTime() - startTime;
+            enableOptions("pages");
 
             out.text("");
 
@@ -381,9 +387,9 @@ var ATPIN = {};
                 {
                     var li = $("<li class='list-group-item'></li>");
 					var parts = result[i].split(':');
-                    li.append("<a href='#' onclick='ATPIN.searchByName(\"" + parts[0] + "\")' class='result-item'>" + parts[0] + "</a>");
+                    li.append("<a href='?t=0&prot=" + parts[0] + "' class='result-item'>" + parts[0] + "</a>");
 					li.append("<span class='text-muted'> | </span>");
-					li.append("<a href='#' onclick='ATPIN.searchByName(\"" + parts[1] + "\")' class='result-item'>" + parts[1] + "</a>");
+					li.append("<a href='?t=0&prot=" + parts[1] + "' class='result-item'>" + parts[1] + "</a>");
                     li.append("<br>");
 
                     (function(m) {
@@ -411,28 +417,9 @@ var ATPIN = {};
             }
 
             // Se for 204 (NoContent), mostra um status de proteína não encontrada
-            else if (xhr.status == 204) {
+            else if (xhr.status == 204)
+                status.text("No interaction matches the method you are looking for.");
 
-                status.text("No protein matches the description you are looking for.");
-
-                if (sessionStorage.disableHint == "true") {
-
-                    $("#hint").css({
-                        display: "block"
-                    });
-
-                    $("body").css({
-                        paddingBottom: "60px"
-                    });
-
-                    requestRandom(function(data) {
-                        $("#hint-locus").text(data);
-                        $("#hint-locus").attr("href", "?locus=" + data);
-                    });
-
-                    sessionStorage.disableHint = false;
-                }
-            }
         }, defaultError);
     };
 
@@ -442,11 +429,76 @@ var ATPIN = {};
     module.searchByC3 = function(c3, page) {
         module.setupSearch(page);
 
+        var out  = $("#result"),
+            status  = $("#status");
+
+        addToHistory("C" + c3);
+
         if (!page)
         {
 	        requestNumberOfPages("QC3", c3, showPages, defaultError);
 	        __pageChanged__ = function(p) { module.searchByC3(c3, p); };
 	    }
+
+        var startTime = new Date().getTime();
+        requestSearchByC3(c3, page || 1, function(data, textStatus, xhr) {
+            var msElapsed = new Date().getTime() - startTime;
+            enableOptions("pages");
+
+            out.text("");
+
+            // Se o código de sucesso for 200 (OK), mostra o resultado na tela
+            if (xhr.status == 200) {
+
+                if (data == undefined) {
+                    status.text("No matches were found on the database for the given c3.");
+                    return;
+                }
+
+                var result = data.split(",");
+                __lastReceivedData__ = result;
+                status.text(result.length + " results (" + msElapsed / 1000 + " seconds)");
+
+                // Exibe a lista de resultados
+                var ul = $("<ul class='list-group'></ul>");
+
+                for (var i = 0; i < result.length; i++)
+                {
+                    var li = $("<li class='list-group-item'></li>");
+                    var parts = result[i].split(':');
+                    li.append("<a href='?t=0&prot=" + parts[0] + "' class='result-item'>" + parts[0] + "</a>");
+                    li.append("<span class='text-muted'> | </span>");
+                    li.append("<a href='?t=0&prot=" + parts[1] + "' class='result-item'>" + parts[1] + "</a>");
+                    li.append("<br>");
+
+                    (function(m) {
+                        li.append(m);
+
+                        requestC3(parts[0], parts[1],
+                            function(data) {
+                                var index = data.search(new RegExp(c3, "gi"));
+                                m.html(data.substring(0, index));
+                                m.append("<mark>" + data.substring(index, index + c3.length) + "</mark>");
+                                m.append(data.substring(index + c3.length));
+                            },
+
+                            function() {
+                                m.text("Failed to fetch interaction prediction method from server")
+                            }
+                        );
+                    })($("<span>Loading...</span>"));
+
+                    ul.append(li);
+                }
+
+                out.append(ul);
+            }
+
+            // Se for 204 (NoContent), mostra um status de proteína não encontrada
+            else if (xhr.status == 204)
+                status.text("No interaction matches the C3 you are looking for.");
+
+        }, defaultError);
     };
 
     //
@@ -465,9 +517,6 @@ var ATPIN = {};
 
         __lastSearched__ = locus;
 
-        enableOptionsInline("expand-all", "collapse-all");
-        enableOptions("pages");
-
         if (!page)
         {
         	requestNumberOfPages("LOCUS", locus, showPages, defaultError);
@@ -477,8 +526,10 @@ var ATPIN = {};
         var startTime = new Date().getTime();
 
         function success(data, textStatus, xhr) {
-
             var msElapsed = new Date().getTime() - startTime;
+
+            enableOptionsInline("expand-all", "collapse-all");
+            enableOptions("pages");
 
             out.text("");
 
@@ -503,7 +554,7 @@ var ATPIN = {};
                 {
                     var li = $("<li class='list-group-item'></li>");
                     li.append("<a class='glyphicon glyphicon-transfer search-pair' href='?locus=" + locus + "&other=" + result[i] + "'></a>");
-                    li.append("<a href='#' onclick='ATPIN.searchByName(\"" + result[i] + "\")' class='result-item'>" + result[i] + "</a>");
+                    li.append("<a href='?t=0&prot=" + result[i] + "' class='result-item'>" + result[i] + "</a>");
                     li.append("<span class='more glyphicon glyphicon-chevron-down' onclick='ATPIN.showDetails(" + i + ")'></span>");
                     li.append("<br>");
                     li.append("<div class='target'></div>");
@@ -531,7 +582,7 @@ var ATPIN = {};
 
                     requestRandom(function(data) {
                         $("#hint-locus").text(data);
-                        $("#hint-locus").attr("href", "?locus=" + data);
+                        $("#hint-locus").attr("href", "?t=0&prot=" + data);
                     });
 
                     sessionStorage.disableHint = false;
@@ -834,7 +885,7 @@ var ATPIN = {};
 	//
 	// Mostra o histórico de busca
 	//
-	module.showHistory = function() {
+	module.showHistory = function(page) {
 		var out = $("#result"),
 				status  = $("#status");
 
@@ -843,7 +894,7 @@ var ATPIN = {};
 
         enableOptions("expand-collapse");
         enableOptionsInline("clear-history");
-        disableOptions("expand-all", "collapse-all", "show-graph");
+        disableOptions("expand-all", "collapse-all", "show-graph", "pages");
 
 		if (!window.localStorage)
 		{
@@ -860,24 +911,31 @@ var ATPIN = {};
 		var ul = $("<ul class='list-group'></ul>");
 
 		var entries = window.localStorage.history.split("\0");
-		for (var i = entries.length - 1; i >= 0; i--)
-		{
+        __pageChanged__ = function(p) { console.log(p); module.showHistory(p); };
+        if (!page)
+            showPages(Math.ceil(entries.length / 50));
+        enableOptions("pages");
+
+        page = page || 1;
+
+		for (var i = (page - 1) * 50; i < entries.length && i < page * 50; i++)
+        {
 			var li = $("<li class='list-group-item'></li>");
-			var entry = entries[i];
+			var entry = entries[entries.length - 1 - i];
 
 			if (entry[0] == 'S')
-				li.append("<tr><td style='width: 100%'><a href='#' onclick='ATPIN.searchByName(\"" + entry.substring(1) + "\")' class='result-item'>" + entry.substring(1) + "</a></td><td class='text-muted text-right'>Name</td></tr>");
+				li.append("<tr><td style='width: 100%'><a href='?t=0&prot=" + entry.substring(1) + "' class='result-item'>" + entry.substring(1) + "</a></td><td class='text-muted text-right'>Name</td></tr>");
 			else if (entry[0] == '2')
 			{
 				var parts = entry.substring(1).split(',');
 				li.append("<tr><td style='width: 100%'><a href='#' onclick='ATPIN.searchTwo(\"" + parts[0] + "\", \"" + parts[1] + "\")' class='result-item'>" + parts[0] + " - " + parts[1] + "</a></td><td class='text-muted text-right'>Pair</td></tr>");
 			}
             else if (entry[0] == 'D')
-                li.append("<tr><td style='width: 100%'><a href='#' onclick='ATPIN.searchByDescription(\"" + entry.substring(1) + "\")' class='result-item'>" + entry.substring(1) + "</a></td><td class='text-muted text-right'>Description</td></tr>");
+                li.append("<tr><td style='width: 100%'><a href='?t=4&desc=" + entry.substring(1) + "' class='result-item'>" + entry.substring(1) + "</a></td><td class='text-muted text-right'>Description</td></tr>");
             else if (entry[0] == 'M')
-                li.append("<tr><td style='width: 100%'><a href='#' onclick='ATPIN.searchByMethod(\"" + entry.substring(1) + "\")' class='result-item'>" + entry.substring(1) + "</a></td><td class='text-muted text-right'>Method</td></tr>");
+                li.append("<tr><td style='width: 100%'><a href='?t=2&m=" + entry.substring(1) + "' class='result-item'>" + entry.substring(1) + "</a></td><td class='text-muted text-right'>Method</td></tr>");
             else if (entry[0] == 'C')
-                li.append("<tr><td style='width: 100%'><a href='#' onclick='ATPIN.searchByC3(\"" + entry.substring(1) + "\")' class='result-item'>" + entry.substring(1) + "</a></td><td class='text-muted text-right'>C3</td></tr>");
+                li.append("<tr><td style='width: 100%'><a href='?t=3&c3=" + entry.substring(1) + "' class='result-item'>" + entry.substring(1) + "</a></td><td class='text-muted text-right'>C3</td></tr>");
 			else
 				continue;
 
@@ -940,9 +998,38 @@ var ATPIN = {};
     }
 
     //
+    // Processa os dados passados por GET pela URL
+    //
+    function parseGETData(params) {
+        switch (parseInt(params["t"]))
+        {
+            case 0:
+                module.searchByName(params["prot"], params["p"]);
+                break;
+
+            case 1:
+                module.searchByName(params["name"], params["p"]);
+                break;
+
+            case 2:
+                module.searchByMethod(params["m"], params["p"]);
+                break;
+
+            case 3:
+                module.searchByC3(params["c3"], params["p"]);
+                break;
+
+            case 4:
+                module.searchByDescription(params["desc"], params["p"]);
+                break;
+        }
+    }
+
+    //
     // Evento de carregamento finalizado no documento
     //
     $(document).ready(function() {
+
         var input = $("#search");
 
         input.on('input', pesquisaEdited);
@@ -956,8 +1043,23 @@ var ATPIN = {};
 
             requestRandom(function(data) {
                 $("#hint-locus").text(data);
-                $("#hint-locus").attr("onclick", "ATPIN.searchByName(\"" + data + "\")");
+                $("#hint-locus").attr("href", "?t=0&prot=" + data);
             });
         }
+
+        // Processa os dados de GET da URL
+        (window.onpopstate = function () {
+            var match,
+                pl     = /\+/g,  // Regex for replacing addition symbol with a space
+                search = /([^&=]+)=?([^&]*)/g,
+                decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); },
+                query  = window.location.search.substring(1),
+                urlParams = {};
+
+            while (match = search.exec(query))
+               urlParams[decode(match[1])] = decode(match[2]);
+
+           parseGETData(urlParams);
+        })();
     });
 })(ATPIN);
