@@ -553,7 +553,7 @@ var ATPIN = {};
                 for (var i = 0; i < result.length; i++)
                 {
                     var li = $("<li class='list-group-item'></li>");
-                    li.append("<a class='glyphicon glyphicon-transfer search-pair' href='?locus=" + locus + "&other=" + result[i] + "'></a>");
+                    li.append("<a class='glyphicon glyphicon-transfer search-pair' href='?t=5&locus=" + locus + "&other=" + result[i] + "'></a>");
                     li.append("<a href='?t=0&prot=" + result[i] + "' class='result-item'>" + result[i] + "</a>");
                     li.append("<span class='more glyphicon glyphicon-chevron-down' onclick='ATPIN.showDetails(" + i + ")'></span>");
                     li.append("<br>");
@@ -632,7 +632,7 @@ var ATPIN = {};
                 var msElapsed = new Date().getTime() - startTime;
 
                 $("#show-graph").css({display: "inline"});
-                $("#show-graph").html("<a href='#' onclick='ATPIN.showGraph()'>Show Graph</a>");
+                $("#show-graph").html("<a href='?t=6&a=" + a + "&b=" + b + "'>Show Graph</a>");
 
                 var all = [];
 
@@ -652,8 +652,8 @@ var ATPIN = {};
 
                 var headRow = $("<tr></tr>");
                 headRow.append("<th></th>");
-                headRow.append("<th>" + this.locus + "</th>");
-                headRow.append("<th>" + other.locus + "</th>");
+                headRow.append("<th><a href='?t=0&prot=" + this.locus + "'>" + this.locus + "</a></th>");
+                headRow.append("<th><a href='?t=0&prot=" + other.locus + "'>" + other.locus + "</a></th>");
 
                 thead.append(headRow);
 
@@ -689,7 +689,7 @@ var ATPIN = {};
                     else
                         row = $("<tr></tr>");
 
-                    row.append("<th>" + all[i] + "</th>");
+                    row.append("<th><a href='?t=0&prot=" + all[i] + "'>" + all[i] + "</a></th>");
                     row.append("<td><span class='glyphicon " + (interactsWithThis ? "glyphicon-ok" : "glyphicon-remove") + "'></span></td>");
                     row.append("<td><span class='glyphicon " + (interactsWithOther ? "glyphicon-ok" : "glyphicon-remove") + "'></span></td>");
 
@@ -706,8 +706,8 @@ var ATPIN = {};
             }
         }
 
-        requestLocus(a, success.bind(dA), defaultError);
-        requestLocus(b, success.bind(dB), defaultError);
+        requestLocus(a, 0x7FFFFFFF, success.bind(dA), defaultError);
+        requestLocus(b, 0x7FFFFFFF, success.bind(dB), defaultError);
     };
 
     //
@@ -756,7 +756,6 @@ var ATPIN = {};
                         table.append(tbody);
 
                         div.append(table);
-
                     }
 
                     // Se não, Houston we have a problem
@@ -803,7 +802,7 @@ var ATPIN = {};
     //
     // Mostra as interações da proteína na forma de grafo
     //
-    module.showGraph = function() {
+    module.showGraph = function(a, b) {
         var out = $("#result"),
             status  = $("#status");
 
@@ -817,8 +816,8 @@ var ATPIN = {};
 
         svg.bind('mousewheel DOMMouseScroll', mouseWheelHandler);
 
-        var a = __lastReceivedData__.a;
-        var b = __lastReceivedData__.b;
+        //var a = __lastReceivedData__.a;
+        //var b = __lastReceivedData__.b;
 
         __graph__.addVertex(a.locus);
         __graph__.addVertex(b.locus);
@@ -879,7 +878,7 @@ var ATPIN = {};
             __graph__.translation = { x: translation.x - dx, y: translation.y - dy };
         });
 
-        $("#show-graph").html("<a href='#' onclick='ATPIN.searchTwo()'>Show Table</a>");
+        $("#show-graph").html("<a href='?t=5&locus=" + __lastSearched__[0] + "&other=" + __lastSearched__[1] + "'>Show Table</a>");
     };
 
 	//
@@ -928,7 +927,7 @@ var ATPIN = {};
 			else if (entry[0] == '2')
 			{
 				var parts = entry.substring(1).split(',');
-				li.append("<tr><td style='width: 100%'><a href='#' onclick='ATPIN.searchTwo(\"" + parts[0] + "\", \"" + parts[1] + "\")' class='result-item'>" + parts[0] + " - " + parts[1] + "</a></td><td class='text-muted text-right'>Pair</td></tr>");
+				li.append("<tr><td style='width: 100%'><a href='?t=5&locus=" + parts[0] + "&other=" + parts[1] + "' class='result-item'>" + parts[0] + " - " + parts[1] + "</a></td><td class='text-muted text-right'>Pair</td></tr>");
 			}
             else if (entry[0] == 'D')
                 li.append("<tr><td style='width: 100%'><a href='?t=4&desc=" + entry.substring(1) + "' class='result-item'>" + entry.substring(1) + "</a></td><td class='text-muted text-right'>Description</td></tr>");
@@ -1022,6 +1021,14 @@ var ATPIN = {};
             case 4:
                 module.searchByDescription(params["desc"], params["p"]);
                 break;
+
+            case 5:
+                module.searchTwo(params["locus"], params["other"]);
+                break;
+
+            case 6:
+                module.showGraph(params["a"], params["b"]);
+                break;
         }
     }
 
@@ -1048,18 +1055,17 @@ var ATPIN = {};
         }
 
         // Processa os dados de GET da URL
-        (window.onpopstate = function () {
-            var match,
-                pl     = /\+/g,  // Regex for replacing addition symbol with a space
-                search = /([^&=]+)=?([^&]*)/g,
-                decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); },
-                query  = window.location.search.substring(1),
-                urlParams = {};
+        var match,
+            pl     = /\+/g,  // Regex for replacing addition symbol with a space
+            search = /([^&=]+)=?([^&]*)/g,
+            decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); },
+            query  = window.location.search.substring(1),
+            urlParams = {};
 
-            while (match = search.exec(query))
-               urlParams[decode(match[1])] = decode(match[2]);
+        while (match = search.exec(query))
+           urlParams[decode(match[1])] = decode(match[2]);
 
-           parseGETData(urlParams);
-        })();
+       parseGETData(urlParams);
+
     });
 })(ATPIN);
