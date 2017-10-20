@@ -601,8 +601,9 @@ var ATPIN = {};
         var out     = $("#result"),
             status  = $("#status");
 
+        module.setupSearch(0);
+        enableOptions("expand-collapse", "show-graph");
 		addToHistory("2" + a + "," + b);
-        enableOptions("expand-collapse");
 
         var startTime = new Date().getTime();
 
@@ -632,7 +633,7 @@ var ATPIN = {};
                 var msElapsed = new Date().getTime() - startTime;
 
                 $("#show-graph").css({display: "inline"});
-                $("#show-graph").html("<a href='?t=6&a=" + a + "&b=" + b + "'>Show Graph</a>");
+                $("#show-graph").html("<a href='#' onclick='ATPIN.showGraph()'>Show Graph</a>");
 
                 var all = [];
 
@@ -802,12 +803,16 @@ var ATPIN = {};
     //
     // Mostra as interações da proteína na forma de grafo
     //
-    module.showGraph = function(a, b) {
+    module.showGraph = function() {
         var out = $("#result"),
             status  = $("#status");
 
         out.text("");
         status.text("");
+
+        module.setupSearch(0);
+        $("#status").empty();
+        enableOptions("expand-collapse", "show-graph");
 
         var svg = $("<svg style='background-color: #fff' id='graph' width='960' height='640'></svg>");
         out.append(svg);
@@ -816,8 +821,8 @@ var ATPIN = {};
 
         svg.bind('mousewheel DOMMouseScroll', mouseWheelHandler);
 
-        //var a = __lastReceivedData__.a;
-        //var b = __lastReceivedData__.b;
+        var a = __lastReceivedData__.a;
+        var b = __lastReceivedData__.b;
 
         __graph__.addVertex(a.locus);
         __graph__.addVertex(b.locus);
