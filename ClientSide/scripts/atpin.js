@@ -210,7 +210,7 @@ var ATPIN = {};
     module.setupSearch = function(page) {
     	disableOptions(
             "expand-all", "collapse-all", "show-graph", 
-            "clear-history", "pages"
+            "clear-history", "pages", "dropdownGraph"
         );
 
         $("#result").text("");
@@ -808,20 +808,26 @@ var ATPIN = {};
         var out = $("#result"),
             status  = $("#status");
 
-        disableOptions("show-graph");
+        disableOptions("show-graph", "pages");
+        enableOptions("dropdownGraph");
 
         out.text("");
         status.text("");
 
         var graph = $("<div></div>");
+        graph.css({ 
+            width: '100%',
+            height: '100%',
+            left: 0,
+            bottom: 0,
+            zIndex: 999
+        });
         out.append(graph);
 
         var nodes = [], edges = [];
 
         __cy__ = cytoscape({
         	container: graph[0],
-			boxSelectionEnabled: false,
-			autounselectify: true,
 
 			style: [
 				{
@@ -829,7 +835,8 @@ var ATPIN = {};
 					css: {
 						'content': 'data(id)',
 						'text-valign': 'center',
-						'text-halign': 'center'
+						'text-halign': 'center',
+                        'background-color': '#7a9d02'
 					}
 				},
 
@@ -842,16 +849,16 @@ var ATPIN = {};
 						'padding-right': '10px',
 						'text-valign': 'top',
 						'text-halign': 'center',
-						'background-color': '#bbb'
+						'background-color': '#fffec8'
 					}
 				},
 
 				{
 					selector: 'edge',
 					css: {
-						'target-arrow-shape': 'triangle',
 						'width': 'data(fsw)',
-						'curve-style': 'bezier'
+						'curve-style': 'bezier',
+                        //'line-color': 'grey',
 					}
 				},
 
@@ -866,20 +873,14 @@ var ATPIN = {};
 				}
 			],
 
-			// { data: { id: 'a', parent: 'b' }, position: { x: 215, y: 85 } },
-			// { data: { id: 'b' } },
-
-			// { data: { id: 'ad', source: 'a', target: 'd' } },
-
 			elements: {
 				nodes: [],
 				edges: []
 			},
 
-			layout: {
-				name: 'preset',
-				padding: 5
-			}
+            layout: {
+                name: 'grid'
+            }
         });
     };
 
@@ -890,17 +891,24 @@ var ATPIN = {};
     //
     module.addProteinToGraph = function(prot) {
     	requestInteractions(prot, 0x7FFFFFFF, function(data) {
-    		console.log(data);
+    		__cy__.add({ group: "nodes", data: { id: prot }, position: { x: Math.random() * 500, y: Math.random() * 500 } });
+
     		var interactions = data.split(",");
 
     		for (var i = 0; i < interactions.length; i++)
-    			requestInfo(prot, data[i], function(data) {
-    				var info = JSON.parse(data);
+            {
+                var b = interactions[i];
+    			requestInfo(prot, b, function(idata) {
+    				var info = JSON.parse(idata);
 
-    				__cy__.add({ group: "nodes", data: { id: data[i], parent: prot } });
-    				__cy__.add({ group: "edges", data: { id: prot + '>' + data[i], source: prot, target: data[i], fsw: info.fsw } });
-                    
-    			}, defaultError);
+                    var b = this;
+                    if (b != prot)
+    				    __cy__.add({ group: "nodes", data: { id: '' + b }, position: { x: Math.random() * 500, y: Math.random() * 500 } });
+    				__cy__.add({ group: "edges", data: { id: '' + prot + '>' + b, source: '' + prot, target: '' + b, fsw: 1.0 - info.fsw }});
+                    __cy__.layout({ name: 'concentric' }).run();
+
+    			}.bind(b), defaultError);
+            }
     	}, defaultError);
     };
 

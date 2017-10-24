@@ -74,6 +74,21 @@
 			<!-- Paginamento -->
 			<select id="pages" class="form-control"></select>
 
+			<div id="dropdownGraph" class="dropdown">
+				<button class="btn btn-default dropdown-toggle " type="button" data-toggle="dropdown" style="background-color: transparent;border: 0">
+				<span class="glyphicon glyphicon-plus"></span></button>
+				<ul class="dropdown-menu" style="background-color: transparent; box-shadow: none; border: 0;">
+					<li><input id="protein2" type="text" class="form-control">
+						<button class="btn btn-default" onclick="ATPIN.addProteinToGraph($('#protein2').val())">
+								&nbsp;
+								<span class="glyphicon glyphicon-search"></span>
+								&nbsp;
+						</button>
+					</li>
+					
+				</ul>
+			</div>
+
 			<!-- Painel onde são mostradas os resultados das buscas -->
 			<div id="result"></div>
 
