@@ -1,0 +1,173 @@
+body {
+    background-color: #fffec8
+}
+
+#logo {
+  width: auto;
+  max-height: 100%;
+}
+
+#menu {
+    top: 0px;
+    left: 0px;
+    text-align: center;
+    width: 100%;
+    background-color: #7a9d02;
+}
+
+#expand-collapse {
+  display: none;
+}
+
+.pag {
+    width: 70%;
+    margin-left: 15%;
+    margin-right: 15%;
+}
+
+.cab {
+    height: 20%;
+    background-color: lightgray;
+    margin-bottom: 3px;
+}
+
+.logo {
+    padding-left: 7%;
+    padding-top: 3%;
+}
+
+#hint {
+    position: fixed;
+    display: none;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    background-color: #f5f5f5;
+}
+
+.container .text-muted {
+    margin: 20px 0;
+}
+
+#hint > .container {
+    padding-right: 15px;
+    padding-left: 15px;
+}
+
+.navbar-default .navbar-nav>.open>a, .navbar-default .navbar-nav>.open>a:focus, .navbar-default .navbar-nav>.open>a:hover {
+    background-color: #8abd22;
+}
+
+.navbar-default .navbar-toggle : hover {
+    background-color: #8abd22;
+}
+
+.more {
+    position: relative;
+    float: right;
+    background-color: transparent;
+    border: 0px solid transparent;
+    color: lightgrey;
+}
+
+.more:hover {
+    background-color: inherit;
+    color: grey;
+    cursor: pointer;
+}
+
+.more:focus {
+    background-color: inherit;
+    color: inherit;
+}
+
+.more:active {
+    background-color: inherit;
+    color: inherit;
+}
+
+.target {
+    display: none;
+    margin-top: 16px;
+}
+
+.expanded {
+    display: block;
+}
+
+.collapsed {
+    display: none;
+}
+
+.table {
+    width: 100%;
+}
+
+.more.rotated {
+    transition-duration: .2s;
+    transform: rotateZ(180deg);
+}
+
+.more.unrotated {
+    transition-duration: .2s;
+    transform: rotateZ(0deg);
+}
+
+th, td {
+    padding: 8px;
+}
+
+td ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+td ul li {
+    margin-bottom: 8px;
+}
+
+tr td .glyphicon {
+	color: #ccc;
+}
+
+tr.success .glyphicon, tr.info .glyphicon {
+	color: black;
+}
+
+.dropdown{
+    display: inline;
+}
+
+.search-pair {
+    text-decoration: none;
+    color: inherit;
+    margin-right: 12px;
+}
+
+.search-pair:hover {
+    text-decoration: none;
+    color: inherit;
+}
+
+.pesquisa{
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+.expandir{
+    border-top-left-radius: 0%;
+    border-bottom-left-radius: 0%;
+}
+
+.opcoes{
+    border-radius: 0;
+}
+
+mark {
+		background-color: yellow;
+}
+
+#pages {
+    display: none;
+}
