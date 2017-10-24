@@ -166,35 +166,52 @@ namespace ATPIN
         /// <returns>As interações para a proteína especificada em uma string separada por vírgulas</returns>
         public string GetInteractionsForProtein(string prot, uint page)
         {
-            /*// Se existe cache, retorna ele
-            string cache = GetCache(prot);
-            if (cache != null)
-                return cache;*/
+            if (page >= 0x7FFFFFFF)
+            {
+                // Se existe cache, retorna ele
+                string cache = GetCache(prot);
+                if (cache != null)
+                    return cache;
+            }
 
             // Se não, faz a pesquisa e armazena o cache
-            string interactions = "",
-                   query = "SELECT locusA, locusB FROM interactome WHERE locusA LIKE @0 or locusB LIKE @0 LIMIT @1, @2";
-
+            string interactions = "";
             List<string> results = new List<string>();
 
-            using (MySqlDataReader result = ExecuteQuery(query, prot, (page - 1) * PAGE_LIMIT, PAGE_LIMIT))
-            {
-                if (!result.HasRows)
-                    throw new LocusNotFoundException();
 
-                while (result.Read())
+            if (page < 0x7FFFFFFF)
+                using (MySqlDataReader result = ExecuteQuery("SELECT locusA, locusB FROM interactome WHERE locusA LIKE @0 or locusB LIKE @0 LIMIT @1, @2", prot, (page - 1) * PAGE_LIMIT, PAGE_LIMIT))
                 {
-					string locusA = result.GetString("locusA");
+                    if (!result.HasRows)
+                        throw new LocusNotFoundException();
 
-                    results.Add(locusA.Equals(prot) ? result.GetString("locusB") : locusA);
+                    while (result.Read())
+                    {
+					    string locusA = result.GetString("locusA");
+
+                        results.Add(locusA.Equals(prot) ? result.GetString("locusB") : locusA);
+                    }
                 }
-            }
+            else
+                using (MySqlDataReader result = ExecuteQuery("SELECT locusA, locusB FROM interactome WHERE locusA LIKE @0 or locusB LIKE @0", prot))
+                {
+                    if (!result.HasRows)
+                        throw new LocusNotFoundException();
+
+                    while (result.Read())
+                    {
+                        string locusA = result.GetString("locusA");
+
+                        results.Add(locusA.Equals(prot) ? result.GetString("locusB") : locusA);
+                    }
+                }
 
             foreach (string interactome in results)
                 interactions += interactome + ",";
             interactions = interactions.TrimEnd(',');
 
-            /*SaveCache(prot, interactions);*/
+            if (page >= 0x7FFFFFFF)
+                SaveCache(prot, interactions);
 
             return interactions;
         }
