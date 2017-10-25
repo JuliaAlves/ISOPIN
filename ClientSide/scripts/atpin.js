@@ -219,6 +219,13 @@ var ATPIN = {};
         $("#pages")[0].selectedIndex = page - 1;
     }
 
+    module.checkRadio= function(){
+        if($("#radio1").checked)
+            atpin.search();
+        else if ($("#radio2").checked)
+            atpin.addProteinToGraph($("#search").val());
+    }
+
     //
     // Executa uma pesquisa pelo campo selecionado na barra de busca
     //
