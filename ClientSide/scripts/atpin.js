@@ -6,7 +6,8 @@ var ATPIN = {};
         __lastSearched__,
         __lastReceivedData__,
         __graph__,
-        __pageChanged__;
+        __pageChanged__,
+        __cy__;
 
     //
     // Envia uma requisição para o servidor
@@ -66,7 +67,7 @@ var ATPIN = {};
     //
     //  locus       : Proteína a ser requisitada
     //
-    function requestLocus(locus, page, onsuccess, onerror) {
+    function requestInteractions(locus, page, onsuccess, onerror) {
         sendRequest("LOCUS " + page + " " + locus, onsuccess, onerror);
     }
 
@@ -209,7 +210,7 @@ var ATPIN = {};
     module.setupSearch = function(page) {
     	disableOptions(
             "expand-all", "collapse-all", "show-graph", 
-            "clear-history", "pages"
+            "clear-history", "pages", "dropdownGraph"
         );
 
         $("#result").text("");
@@ -553,7 +554,7 @@ var ATPIN = {};
                 for (var i = 0; i < result.length; i++)
                 {
                     var li = $("<li class='list-group-item'></li>");
-                    li.append("<a class='glyphicon glyphicon-transfer search-pair' href='?locus=" + locus + "&other=" + result[i] + "'></a>");
+                    li.append("<a class='glyphicon glyphicon-transfer search-pair' href='?t=5&locus=" + locus + "&other=" + result[i] + "'></a>");
                     li.append("<a href='?t=0&prot=" + result[i] + "' class='result-item'>" + result[i] + "</a>");
                     li.append("<span class='more glyphicon glyphicon-chevron-down' onclick='ATPIN.showDetails(" + i + ")'></span>");
                     li.append("<br>");
@@ -590,7 +591,7 @@ var ATPIN = {};
             }
         }
 
-        requestLocus(locus, page || 1, success, defaultError);
+        requestInteractions(locus, page || 1, success, defaultError);
     };
 
     //
@@ -601,8 +602,9 @@ var ATPIN = {};
         var out     = $("#result"),
             status  = $("#status");
 
+        module.setupSearch(0);
+        enableOptions("expand-collapse", "show-graph");
 		addToHistory("2" + a + "," + b);
-        enableOptions("expand-collapse");
 
         var startTime = new Date().getTime();
 
@@ -652,8 +654,8 @@ var ATPIN = {};
 
                 var headRow = $("<tr></tr>");
                 headRow.append("<th></th>");
-                headRow.append("<th>" + this.locus + "</th>");
-                headRow.append("<th>" + other.locus + "</th>");
+                headRow.append("<th><a href='?t=0&prot=" + this.locus + "'>" + this.locus + "</a></th>");
+                headRow.append("<th><a href='?t=0&prot=" + other.locus + "'>" + other.locus + "</a></th>");
 
                 thead.append(headRow);
 
@@ -689,7 +691,7 @@ var ATPIN = {};
                     else
                         row = $("<tr></tr>");
 
-                    row.append("<th>" + all[i] + "</th>");
+                    row.append("<th><a href='?t=0&prot=" + all[i] + "'>" + all[i] + "</a></th>");
                     row.append("<td><span class='glyphicon " + (interactsWithThis ? "glyphicon-ok" : "glyphicon-remove") + "'></span></td>");
                     row.append("<td><span class='glyphicon " + (interactsWithOther ? "glyphicon-ok" : "glyphicon-remove") + "'></span></td>");
 
@@ -706,8 +708,8 @@ var ATPIN = {};
             }
         }
 
-        requestLocus(a, success.bind(dA), defaultError);
-        requestLocus(b, success.bind(dB), defaultError);
+        requestLocus(a, 0x7FFFFFFF, success.bind(dA), defaultError);
+        requestLocus(b, 0x7FFFFFFF, success.bind(dB), defaultError);
     };
 
     //
@@ -756,7 +758,6 @@ var ATPIN = {};
                         table.append(tbody);
 
                         div.append(table);
-
                     }
 
                     // Se não, Houston we have a problem
@@ -807,79 +808,123 @@ var ATPIN = {};
         var out = $("#result"),
             status  = $("#status");
 
+        disableOptions("show-graph", "pages");
+        enableOptions("dropdownGraph");
+
         out.text("");
         status.text("");
 
-        var svg = $("<svg style='background-color: #fff' id='graph' width='960' height='640'></svg>");
-        out.append(svg);
-
-        __graph__ = new ATPIN.Graph(svg);
-
-        svg.bind('mousewheel DOMMouseScroll', mouseWheelHandler);
-
-        var a = __lastReceivedData__.a;
-        var b = __lastReceivedData__.b;
-
-        __graph__.addVertex(a.locus);
-        __graph__.addVertex(b.locus);
-
-        for (var i = 0; i < a.interactions.length; i++)
-        {
-            var p = a.interactions[i];
-
-            if (p == b.locus || p == a.locus)
-                continue;
-
-            __graph__.addVertex(p);
-            __graph__.addEdge(p, a.locus);
-        }
-
-        for (var i = 0; i < b.interactions.length; i++)
-        {
-            var p = b.interactions[i];
-
-            if (p == b.locus || p == a.locus)
-                continue;
-
-            if (!a.interactions.some(function(c) { return c == p; }))
-                __graph__.addVertex(p);
-
-            __graph__.addEdge(p, b.locus);
-        }
-
-        __graph__.addEdge(a.locus, b.locus);
-        __graph__.render();
-
-        svg.attr("width", "100%");
-        svg.attr("height", "100%");
-
-        var mousedown = false, cx = 0, cy = 0;
-
-        svg.bind("mousedown", function(e) {
-            mousedown = true;
-            cx = e.clientX;
-            cy = e.clientY;
-
-            svg.css("cursor", "move");
-        })
-        .bind("mouseup mouseout", function(e) {
-            mousedown = false;
-            svg.css("cursor", "default");
-        })
-        .bind("mousemove", function(e) {
-            if (!mousedown)
-                return;
-
-            var dx = cx - e.clientX, dy = cy - e.clientY;
-
-            cx = e.clientX;
-            cy = e.clientY;
-
-            var translation = __graph__.translation;
-            __graph__.translation = { x: translation.x - dx, y: translation.y - dy };
+        var graph = $("<div></div>");
+        graph.css({ 
+            width: '100%',
+            height: '100%',
+            left: 0,
+            bottom: 0,
+            zIndex: 999
         });
+        out.append(graph);
 
-        $("#show-graph").html("<a href='#' onclick='ATPIN.searchTwo()'>Show Table</a>");
+        var nodes = [], edges = [];
+
+        __cy__ = cytoscape({
+        	container: graph[0],
+
+			style: [
+				{
+					selector: 'node',
+					css: {
+						'content': 'data(id)',
+						'text-valign': 'center',
+						'text-halign': 'center',
+                        'background-color': '#7a9d02'
+					}
+				},
+
+				{
+					selector: '$node > node',
+					css: {
+						'padding-top': '10px',
+						'padding-left': '10px',
+						'padding-bottom': '10px',
+						'padding-right': '10px',
+						'text-valign': 'top',
+						'text-halign': 'center',
+						'background-color': '#fffec8'
+					}
+				},
+
+				{
+					selector: 'edge',
+					css: {
+						'width': 'data(fsw)',
+                        'line-color': 'data(color)'
+					}
+				},
+
+				{
+					selector: ':selected',
+					css: {
+						'background-color': 'black',
+						'line-color': 'black',
+						'target-arrow-color': 'black',
+						'source-arrow-color': 'black'
+					}
+				}
+			],
+
+			elements: {
+				nodes: [],
+				edges: []
+			},
+
+            layout: {
+                name: 'grid'
+            }
+        });
+    };
+
+    //
+    //	Adiciona uma proteína e suas interações ao gráfico
+    //
+    //		prot 	: Proteína
+    //
+    module.addProteinToGraph = function(prot) {
+    	requestInteractions(prot, 0x7FFFFFFF, function(data) {
+
+            if (!__cy__.$id(b).isNode())
+    		  __cy__.add({ group: "nodes", data: { id: prot }, position: { x: 1, y: 1 } });
+
+    		var interactions = data.split(",");
+
+    		for (var i = 0; i < interactions.length; i++)
+            {
+                var b = interactions[i];
+    			requestInfo(prot, b, function(idata) {
+    				var info = JSON.parse(idata);
+
+                    var b = '' + this;
+
+                    if (b != prot)
+                        if (!__cy__.$id(b).isNode())
+    				        __cy__.add({ group: "nodes", data: { id: b }, position: { x: 1, y: 1 } });
+
+    				__cy__.add({ 
+                        group: "edges", 
+                        data: { 
+                            id: prot + '>' + b, 
+                            source: '' + prot, 
+                            target: b,
+
+                            fsw: 0.1 + 0.01 / info.fsw, 
+                            color: 'hsl(' + (120 * (1 - info.fsw * 5)) + ', 100%, 50%)' }
+                        }
+                    );
+
+                    __cy__.layout({ name: 'concentric' }).run();
+
+    			}.bind(b), defaultError);
+            }
+    	}, defaultError);
     };
 
 	//
@@ -928,7 +973,7 @@ var ATPIN = {};
 			else if (entry[0] == '2')
 			{
 				var parts = entry.substring(1).split(',');
-				li.append("<tr><td style='width: 100%'><a href='#' onclick='ATPIN.searchTwo(\"" + parts[0] + "\", \"" + parts[1] + "\")' class='result-item'>" + parts[0] + " - " + parts[1] + "</a></td><td class='text-muted text-right'>Pair</td></tr>");
+				li.append("<tr><td style='width: 100%'><a href='?t=5&locus=" + parts[0] + "&other=" + parts[1] + "' class='result-item'>" + parts[0] + " - " + parts[1] + "</a></td><td class='text-muted text-right'>Pair</td></tr>");
 			}
             else if (entry[0] == 'D')
                 li.append("<tr><td style='width: 100%'><a href='?t=4&desc=" + entry.substring(1) + "' class='result-item'>" + entry.substring(1) + "</a></td><td class='text-muted text-right'>Description</td></tr>");
@@ -1022,6 +1067,14 @@ var ATPIN = {};
             case 4:
                 module.searchByDescription(params["desc"], params["p"]);
                 break;
+
+            case 5:
+                module.searchTwo(params["locus"], params["other"]);
+                break;
+
+            case 6:
+                module.showGraph(params["a"], params["b"]);
+                break;
         }
     }
 
@@ -1048,18 +1101,17 @@ var ATPIN = {};
         }
 
         // Processa os dados de GET da URL
-        (window.onpopstate = function () {
-            var match,
-                pl     = /\+/g,  // Regex for replacing addition symbol with a space
-                search = /([^&=]+)=?([^&]*)/g,
-                decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); },
-                query  = window.location.search.substring(1),
-                urlParams = {};
+        var match,
+            pl     = /\+/g,  // Regex for replacing addition symbol with a space
+            search = /([^&=]+)=?([^&]*)/g,
+            decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); },
+            query  = window.location.search.substring(1),
+            urlParams = {};
 
-            while (match = search.exec(query))
-               urlParams[decode(match[1])] = decode(match[2]);
+        while (match = search.exec(query))
+           urlParams[decode(match[1])] = decode(match[2]);
 
-           parseGETData(urlParams);
-        })();
+       parseGETData(urlParams);
+
     });
 })(ATPIN);

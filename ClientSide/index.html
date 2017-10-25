@@ -15,9 +15,11 @@
 		<!-- CSS próprio -->
 		<link href="style/estilo.css" rel="stylesheet">
 
+		<!-- Cytoscape -->
+		<script src="scripts/cytoscape.min.js" type="text/javascript"></script>
+
 		<!-- Script para a pesquisa e desneho dos grafos -->
 		<script src="scripts/atpin.js" type="text/javascript"></script>
-		<script src="scripts/atpin.graph.js" type="text/javascript"></script>
 	</head>
 	<body>
 		<div class="container pag">
@@ -71,6 +73,22 @@
 
 			<!-- Paginamento -->
 			<select id="pages" class="form-control"></select>
+
+			<!-- Botão para o gráfico -->
+			<div id="dropdownGraph" class="dropdown" style="display: none">
+				<button class="btn btn-default dropdown-toggle " type="button" data-toggle="dropdown" style="background-color: transparent;border: 0">
+				<span class="glyphicon glyphicon-plus"></span></button>
+				<ul class="dropdown-menu" style="background-color: transparent; box-shadow: none; border: 0;">
+					<li><input id="protein2" type="text" class="form-control">
+						<button class="btn btn-default" onclick="ATPIN.addProteinToGraph($('#protein2').val())">
+								&nbsp;
+								<span class="glyphicon glyphicon-search"></span>
+								&nbsp;
+						</button>
+					</li>
+					
+				</ul>
+			</div>
 
 			<!-- Painel onde são mostradas os resultados das buscas -->
 			<div id="result"></div>
