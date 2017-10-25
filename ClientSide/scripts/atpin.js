@@ -857,8 +857,7 @@ var ATPIN = {};
 					selector: 'edge',
 					css: {
 						'width': 'data(fsw)',
-						'curve-style': 'bezier',
-                        //'line-color': 'grey',
+                        'line-color': 'data(color)'
 					}
 				},
 
@@ -891,7 +890,9 @@ var ATPIN = {};
     //
     module.addProteinToGraph = function(prot) {
     	requestInteractions(prot, 0x7FFFFFFF, function(data) {
-    		__cy__.add({ group: "nodes", data: { id: prot }, position: { x: Math.random() * 500, y: Math.random() * 500 } });
+
+            if (!__cy__.$id(b).isNode())
+    		  __cy__.add({ group: "nodes", data: { id: prot }, position: { x: 1, y: 1 } });
 
     		var interactions = data.split(",");
 
@@ -901,10 +902,24 @@ var ATPIN = {};
     			requestInfo(prot, b, function(idata) {
     				var info = JSON.parse(idata);
 
-                    var b = this;
+                    var b = '' + this;
+
                     if (b != prot)
-    				    __cy__.add({ group: "nodes", data: { id: '' + b }, position: { x: Math.random() * 500, y: Math.random() * 500 } });
-    				__cy__.add({ group: "edges", data: { id: '' + prot + '>' + b, source: '' + prot, target: '' + b, fsw: 1.0 - info.fsw }});
+                        if (!__cy__.$id(b).isNode())
+    				        __cy__.add({ group: "nodes", data: { id: b }, position: { x: 1, y: 1 } });
+
+    				__cy__.add({ 
+                        group: "edges", 
+                        data: { 
+                            id: prot + '>' + b, 
+                            source: '' + prot, 
+                            target: b,
+
+                            fsw: 0.1 + 0.01 / info.fsw, 
+                            color: 'hsl(' + (120 * (1 - info.fsw * 5)) + ', 100%, 50%)' }
+                        }
+                    );
+
                     __cy__.layout({ name: 'concentric' }).run();
 
     			}.bind(b), defaultError);
