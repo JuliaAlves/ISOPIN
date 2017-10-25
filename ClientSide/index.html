@@ -36,6 +36,8 @@
 					<!-- Pesquisa -->
 					<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
 						<div class="navbar-form navbar-right">
+							<label class="radio-inline"><input type="radio"  id="radio1" name="optradio" checked>List</label>
+							<label class="radio-inline"><input type="radio" id="radio2" name="optradio">Graphic</label>
 							<div class="input-group">
 								<input type="text" class="form-control" placeholder="Search" id="search" maxlength="256">
 								<div class="input-group-btn">
@@ -46,7 +48,7 @@
 										<option value="Method">Method</option>
 										<option value="C3">C3</option>
 									</select>
-									<button class="btn btn-default" disabled onclick="ATPIN.search()" id="submit">
+									<button class="btn btn-default" disabled onclick="ATPIN.checkRadio()" id="submit">
 										&nbsp;
 										<span class="glyphicon glyphicon-search"></span>
 										&nbsp;
