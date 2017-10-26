@@ -7,7 +7,9 @@ var ATPIN = {};
         __lastReceivedData__,
         __graph__,
         __pageChanged__,
-        __cy__;
+        __cy__,
+        __ncy__=0,
+        __vcy__=[];
 
     //
     // Envia uma requisição para o servidor
@@ -219,11 +221,14 @@ var ATPIN = {};
         $("#pages")[0].selectedIndex = page - 1;
     }
 
-    module.checkRadio= function(){
-        if($("#radio1").checked)
-            atpin.search();
-        else if ($("#radio2").checked)
-            atpin.addProteinToGraph($("#search").val());
+    //
+    // Verifica se é para mostrar em lista ou em gráfico
+    //
+    module.checkRadio = function(){
+        if($('#radio1').is(':checked'))
+            module.search();
+        else
+            module.addProteinToGraph($("#search").val());
     }
 
     //
@@ -641,7 +646,7 @@ var ATPIN = {};
                 var msElapsed = new Date().getTime() - startTime;
 
                 $("#show-graph").css({display: "inline"});
-                $("#show-graph").html("<a href='#' onclick='ATPIN.showGraph()'>Show Graph</a>");
+                $("#show-graph").html("<a href='?t=6&add=" + this.locus + "," + other.locus + "'>Show Graph</a>");
 
                 var all = [];
 
@@ -715,8 +720,8 @@ var ATPIN = {};
             }
         }
 
-        requestLocus(a, 0x7FFFFFFF, success.bind(dA), defaultError);
-        requestLocus(b, 0x7FFFFFFF, success.bind(dB), defaultError);
+        requestInteractions(a, 0x7FFFFFFF, success.bind(dA), defaultError);
+        requestInteractions(b, 0x7FFFFFFF, success.bind(dB), defaultError);
     };
 
     //
@@ -871,10 +876,7 @@ var ATPIN = {};
 				{
 					selector: ':selected',
 					css: {
-						'background-color': 'black',
-						'line-color': 'black',
-						'target-arrow-color': 'black',
-						'source-arrow-color': 'black'
+						'padding': '5px'
 					}
 				}
 			],
@@ -885,7 +887,7 @@ var ATPIN = {};
 			},
 
             layout: {
-                name: 'grid'
+                name: 'preset'
             }
         });
     };
@@ -896,17 +898,44 @@ var ATPIN = {};
     //		prot 	: Proteína
     //
     module.addProteinToGraph = function(prot) {
+
+        if(!__cy__)
+            module.showGraph();
+        
     	requestInteractions(prot, 0x7FFFFFFF, function(data) {
 
+            if(!data)
+                return;
+
+
+            for(var i=0; i<__ncy__; i++){
+                var x=Math.cos(2*Math.PI/(__ncy__+1)*(i+1))*200;
+                var y=Math.sin(2*Math.PI/(__ncy__+1)*(i+1))*200;
+                var prin= __vcy__[i][1];
+
+                __cy__.$id(__vcy__[i][0]).position({x: x , y: y });
+
+                for(var j=0;j<prin.length;j++){
+                    __cy__.$id(prin[j]).position({x: Math.cos(2*Math.PI/prin.length*i)*200 + x, y: Math.sin(2*Math.PI/prin.length*i)*200 +y});
+                }
+            }
+
+            
+
             if (!__cy__.$id(b).isNode())
-    		  __cy__.add({ group: "nodes", data: { id: prot }, position: { x: 1, y: 1 } });
+    		  __cy__.add({ group: "nodes", data: { id: prot }, position: { x: 200, y: 0 } });
 
     		var interactions = data.split(",");
+
+            __ncy__++;
+            __vcy__.push([prot, interactions]);
 
     		for (var i = 0; i < interactions.length; i++)
             {
                 var b = interactions[i];
     			requestInfo(prot, b, function(idata) {
+                    if(!idata)
+                        return;
     				var info = JSON.parse(idata);
 
                     var b = '' + this;
@@ -926,8 +955,6 @@ var ATPIN = {};
                             color: 'hsl(' + (120 * (1 - info.fsw * 5)) + ', 100%, 50%)' }
                         }
                     );
-
-                    __cy__.layout({ name: 'concentric' }).run();
 
     			}.bind(b), defaultError);
             }
@@ -1080,7 +1107,12 @@ var ATPIN = {};
                 break;
 
             case 6:
-                module.showGraph(params["a"], params["b"]);
+                module.showGraph();
+
+                var proteins = params["add"].split(",");
+                for (var i = 0; i < proteins.length; i++)
+                    module.addProteinToGraph(proteins[i]);
+
                 break;
         }
     }
