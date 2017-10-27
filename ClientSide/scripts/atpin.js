@@ -903,7 +903,7 @@ var ATPIN = {};
         if(!__cy__)
             module.showGraph();
 
-        var r = 400;
+        var rbase = 400;
 
     	requestInteractions(prot, 0x7FFFFFFF, function(data) {
             if(!data)
@@ -917,6 +917,8 @@ var ATPIN = {};
             window.history.pushState({}, "", url);
 
             for(var i = 0; i < __ncy__; i++){
+            	var r = (1 + Math.log(__vcy__[i][1].length)) * rbase;
+
                 var x = Math.cos(2 * Math.PI / (__ncy__ + 1) * (i + 1)) * r,
                 	y = Math.sin(2 * Math.PI / (__ncy__ + 1) * (i + 1)) * r;
                 var prin = __vcy__[i][1];
@@ -930,10 +932,11 @@ var ATPIN = {};
                     });
             }
 
+    		var interactions = data.split(",");
+            var r = (1 + Math.log(interactions.length)) * rbase;
+
             if (!__cy__.$id(b).isNode())
     		  __cy__.add({ group: "nodes", data: { id: prot }, position: { x: r, y: 0 } });
-
-    		var interactions = data.split(",");
 
             __ncy__++;
             __vcy__.push([prot, interactions]);
@@ -965,7 +968,7 @@ var ATPIN = {};
                             source: '' + prot, 
                             target: b,
 
-                            fsw: 0.1 + 0.01 / info.fsw, 
+                            fsw: 0.5 + 0.05 / info.fsw,
                             color: 'hsl(' + (120 * (1 - info.fsw * 5)) + ', 100%, 50%)' }
                         }
                     );
