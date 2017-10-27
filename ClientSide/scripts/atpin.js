@@ -8,7 +8,7 @@ var ATPIN = {};
         __graph__,
         __pageChanged__,
         __cy__,
-        __ncy__=0,
+        __ncy__ = 0,
         __vcy__=[];
 
     //
@@ -829,10 +829,12 @@ var ATPIN = {};
         var graph = $("<div></div>");
         graph.css({ 
             width: '100%',
-            height: '100%',
+            height: '80%',
             left: 0,
             bottom: 0,
-            zIndex: 999
+            zIndex: 999,
+            marginTop: "24px",
+            backgroundColor: "#fff"
         });
         out.append(graph);
 
@@ -898,32 +900,38 @@ var ATPIN = {};
     //		prot 	: Proteína
     //
     module.addProteinToGraph = function(prot) {
-
         if(!__cy__)
             module.showGraph();
-        
-    	requestInteractions(prot, 0x7FFFFFFF, function(data) {
 
+        var r = 400;
+
+    	requestInteractions(prot, 0x7FFFFFFF, function(data) {
             if(!data)
                 return;
 
+            var url = "index.html?t=6&add=";
+            for (var i = 0; i < __ncy__; i++)
+            	url += __vcy__[i][0] + ",";
+            url += prot;
 
-            for(var i=0; i<__ncy__; i++){
-                var x=Math.cos(2*Math.PI/(__ncy__+1)*(i+1))*200;
-                var y=Math.sin(2*Math.PI/(__ncy__+1)*(i+1))*200;
-                var prin= __vcy__[i][1];
+            window.history.pushState({}, "", url);
 
-                __cy__.$id(__vcy__[i][0]).position({x: x , y: y });
+            for(var i = 0; i < __ncy__; i++){
+                var x = Math.cos(2 * Math.PI / (__ncy__ + 1) * (i + 1)) * r,
+                	y = Math.sin(2 * Math.PI / (__ncy__ + 1) * (i + 1)) * r;
+                var prin = __vcy__[i][1];
 
-                for(var j=0;j<prin.length;j++){
-                    __cy__.$id(prin[j]).position({x: Math.cos(2*Math.PI/prin.length*i)*200 + x, y: Math.sin(2*Math.PI/prin.length*i)*200 +y});
-                }
+                __cy__.$id(__vcy__[i][0]).position({ x: x , y: y });
+
+                for (var j = 0; j < prin.length; j++)
+                    __cy__.$id(prin[j]).position({
+                    	x: x + Math.cos(2 * Math.PI / prin.length * j) * r / 2, 
+                    	y: y + Math.sin(2 * Math.PI / prin.length * j) * r / 2
+                    });
             }
 
-            
-
             if (!__cy__.$id(b).isNode())
-    		  __cy__.add({ group: "nodes", data: { id: prot }, position: { x: 200, y: 0 } });
+    		  __cy__.add({ group: "nodes", data: { id: prot }, position: { x: r, y: 0 } });
 
     		var interactions = data.split(",");
 
@@ -938,15 +946,21 @@ var ATPIN = {};
                         return;
     				var info = JSON.parse(idata);
 
-                    var b = '' + this;
+                    var b = '' + this[0];
 
-                    if (b != prot)
-                        if (!__cy__.$id(b).isNode())
-    				        __cy__.add({ group: "nodes", data: { id: b }, position: { x: 1, y: 1 } });
+                    if (b != prot && !__cy__.$id(b).isNode())
+				        __cy__.add({ 
+				        	group: "nodes",
+				        	data: { id: b },
+				        	position: {
+				        		x: r + Math.cos(2 * Math.PI / interactions.length * this[1]) * r / 2, 
+				        		y: Math.sin(2 * Math.PI / interactions.length * this[1]) * r / 2
+				        	}
+				        });
 
     				__cy__.add({ 
                         group: "edges", 
-                        data: { 
+                        data: {
                             id: prot + '>' + b, 
                             source: '' + prot, 
                             target: b,
@@ -956,7 +970,8 @@ var ATPIN = {};
                         }
                     );
 
-    			}.bind(b), defaultError);
+    				__cy__.fit();
+    			}.bind([b, i]), defaultError);
             }
     	}, defaultError);
     };
