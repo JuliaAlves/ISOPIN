@@ -903,7 +903,7 @@ var ATPIN = {};
         if(!__cy__)
             module.showGraph();
 
-        var rbase = 400;
+        var rbase = 200;
 
     	requestInteractions(prot, 0x7FFFFFFF, function(data) {
             if(!data)
@@ -916,27 +916,27 @@ var ATPIN = {};
 
             window.history.pushState({}, "", url);
 
-            for(var i = 0; i < __ncy__; i++){
-            	var r = (1 + Math.log(__vcy__[i][1].length)) * rbase;
-
-                var x = Math.cos(2 * Math.PI / (__ncy__ + 1) * (i + 1)) * r,
-                	y = Math.sin(2 * Math.PI / (__ncy__ + 1) * (i + 1)) * r;
-                var prin = __vcy__[i][1];
-
-                __cy__.$id(__vcy__[i][0]).position({ x: x , y: y });
-
-                for (var j = 0; j < prin.length; j++)
-                    __cy__.$id(prin[j]).position({
-                    	x: x + Math.cos(2 * Math.PI / prin.length * j) * r / 2, 
-                    	y: y + Math.sin(2 * Math.PI / prin.length * j) * r / 2
-                    });
-            }
-
     		var interactions = data.split(",");
             var r = (1 + Math.log(interactions.length)) * rbase;
+            var x, y;
 
             if (!__cy__.$id(b).isNode())
-    		  __cy__.add({ group: "nodes", data: { id: prot }, position: { x: r, y: 0 } });
+            {
+    			x = Math.cos(2 * Math.PI / (__ncy__ + 1) * __ncy__) * r,
+            	y = Math.sin(2 * Math.PI / (__ncy__ + 1) * __ncy__) * r;
+
+    			__cy__.add({ 
+	    		  	group: "nodes", 
+	    		  	data: { id: prot }, 
+	    		  	position: {
+	    		  		x: x,
+	    		  		y: y,
+	    		  	}
+    			});
+    		} else {
+    			x = __cy__.$id(b).position().x;
+    			y = __cy__.$id(b).position().y;
+    		}
 
             __ncy__++;
             __vcy__.push([prot, interactions]);
@@ -952,20 +952,20 @@ var ATPIN = {};
                     var b = '' + this[0];
 
                     if (b != prot && !__cy__.$id(b).isNode())
-				        __cy__.add({ 
+				        __cy__.add({
 				        	group: "nodes",
 				        	data: { id: b },
 				        	position: {
-				        		x: r + Math.cos(2 * Math.PI / interactions.length * this[1]) * r / 2, 
-				        		y: Math.sin(2 * Math.PI / interactions.length * this[1]) * r / 2
+				        		x: x + Math.cos(2 * Math.PI / interactions.length * this[1]) * r / 3, 
+				        		y: y + Math.sin(2 * Math.PI / interactions.length * this[1])  * r / 3
 				        	}
 				        });
 
     				__cy__.add({ 
-                        group: "edges", 
+                        group: "edges",
                         data: {
                             id: prot + '>' + b, 
-                            source: '' + prot, 
+                            source: '' + prot,
                             target: b,
 
                             fsw: 0.5 + 0.05 / info.fsw,
