@@ -895,6 +895,43 @@ var ATPIN = {};
     };
 
     //
+    // Calcula o enésimo número de fibonacci
+    //
+    function fibonacci(n)
+    {
+    	var a = 1, b = 1;
+
+    	for (; n > 2; n--)
+    	{
+    		var aux = a;
+    		a = a + b;
+    		b = aux;
+    	}
+
+    	return a;
+    }
+
+    //
+    // Calcula a soma dos números de fibonacci até o enésimo número
+    //
+    function sumFibonacci(n)
+    {
+    	var a = 1, b = 1;
+    	var soma = 2;
+
+    	for (; n > 2; n--)
+    	{
+    		var aux = a;
+    		a = a + b;
+    		b = aux;
+
+    		soma += a;
+    	}
+
+    	return soma;
+    }
+
+    //
     //	Adiciona uma proteína e suas interações ao gráfico
     //
     //		prot 	: Proteína
@@ -945,8 +982,15 @@ var ATPIN = {};
             {
                 var b = interactions[i];
     			requestInfo(prot, b, function(idata) {
+    				var fibo = 3;
+    				while (this[1] > sumFibonacci(fibo))
+    					fibo++;
+
+    				var sfibo = sumFibonacci(fibo), fi = fibonacci(fibo);
+
                     if(!idata)
                         return;
+
     				var info = JSON.parse(idata);
 
                     var b = '' + this[0];
@@ -956,8 +1000,8 @@ var ATPIN = {};
 				        	group: "nodes",
 				        	data: { id: b },
 				        	position: {
-				        		x: x + Math.cos(2 * Math.PI / interactions.length * this[1]) * r / 3, 
-				        		y: y + Math.sin(2 * Math.PI / interactions.length * this[1])  * r / 3
+				        		x: x + Math.cos(2 * Math.PI / fi * (this[1] - sfibo) + fibo) * r / 14 * fibo, 
+				        		y: y + Math.sin(2 * Math.PI / fi * (this[1] - sfibo) + fibo)  * r / 14 * fibo
 				        	}
 				        });
 
@@ -968,7 +1012,7 @@ var ATPIN = {};
                             source: '' + prot,
                             target: b,
 
-                            fsw: 0.5 + 0.05 / info.fsw,
+                            fsw: 0.5 + 0.025 / info.fsw,
                             color: 'hsl(' + (120 * (1 - info.fsw * 5)) + ', 100%, 50%)' }
                         }
                     );
